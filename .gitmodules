@@ -1,0 +1,3 @@
+[submodule "models/Geneformer"]
+	path = models/Geneformer
+	url = https://huggingface.co/ctheodoris/Geneformer
