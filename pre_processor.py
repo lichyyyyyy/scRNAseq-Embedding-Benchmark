@@ -24,9 +24,9 @@ import pandas as pd
 import scanpy as sc
 
 # Example scRNAseq data sample from https://scanpy.readthedocs.io/en/stable/generated/scanpy.datasets.pbmc3k.html#scanpy.datasets.pbmc3k
-EXAMPLE_INPUT_FILE_PATH = "../example/data/pbmc3k_raw.h5ad"
-EXAMPLE_OUTPUT_FILE_PATH = "../example/data/processed/pbmc3k_processed.h5ad"
-DEFAULT_GENE_INFO_MAPPING_FILE = "../data/gene_info_table.csv"
+EXAMPLE_INPUT_FILE_PATH = "example/data/pbmc3k_raw.h5ad"
+EXAMPLE_OUTPUT_FILE_PATH = "example/data/processed/pbmc3k_processed.h5ad"
+DEFAULT_GENE_INFO_MAPPING_FILE = "data/gene_info_table.csv"
 
 
 class PreProcessor:
