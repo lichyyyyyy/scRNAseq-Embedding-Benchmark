@@ -26,9 +26,9 @@ Single cell transcriptomics embeddings.
 """
 
 GENEFORMER_PRE_TRAINED_MODEL_PATH = "models/Geneformer/gf-20L-95M-i4096"
-EXAMPLE_INPUT_DIRECTORY = "../example/data/processed"
+EXAMPLE_INPUT_DIRECTORY = "example/data/processed"
 EXAMPLE_TOKENIZED_FILE_DIRECTORY = "example/data/tokenized/tokenized.dataset"
-EXAMPLE_EMBEDDING_OUTPUT_DIRECTORY = "../example/embedding/geneformer"
+EXAMPLE_EMBEDDING_OUTPUT_DIRECTORY = "example/embedding/geneformer"
 
 
 class EmbeddingExtractor:
