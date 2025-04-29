@@ -1,13 +1,12 @@
 # ReadMe
 
+To clone the repo with all submodules:
+
+```
+git clone --recurse-submodules -j8 git@github.com:lichyyyyyy/scRNAseq-Embedding-Benchmark.git
+```
+
 ## Environment SetUp
-
-To activate environment:
-
-```
-python3 -m venv .venv
-python3 -m pip freeze
-```
 
 Or to activate environment from `environment.txt`:
 
@@ -19,5 +18,3 @@ pip install -r requirements.txt
 # Deactivate the virtual environment
 source .venv/bin/deactivate
 ```
-
-
