@@ -69,7 +69,7 @@ class EmbeddingExtractor:
             embex = EmbExtractor(model_type="Pretrained",
                                  num_classes=0,  # 0 for the pre-trained model
                                  emb_mode="cell",
-                                 emb_layer=-1,
+                                 emb_layer=0,
                                  forward_batch_size=10)
             return embex.extract_embs(
                 model_directory,
