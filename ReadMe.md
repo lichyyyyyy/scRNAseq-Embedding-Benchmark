@@ -8,7 +8,10 @@ git clone --recurse-submodules -j8 git@github.com:lichyyyyyy/scRNAseq-Embedding-
 
 ## Environment SetUp
 
-Or to activate environment from `environment.txt`:
+Python version 3.10.
+
+To activate environment from `environment.txt` and please install the correct
+version of pyTorch in this site: https://pytorch.org/get-started/locally/.
 
 ```
 # Activate the virtual environment
