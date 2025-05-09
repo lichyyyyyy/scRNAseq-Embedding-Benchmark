@@ -1,6 +1,0 @@
-[submodule "models/Geneformer"]
-	path = models/Geneformer
-	url = https://huggingface.co/ctheodoris/Geneformer
-[submodule "models/scGPT"]
-	path = models/scGPT
-	url = https://github.com/bowang-lab/scGPT.git
