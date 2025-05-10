@@ -16,12 +16,12 @@ scgpt_configs = dict(
     pad_token="<pad>",
     include_zero_gene=False,
     input_layer_key='X_binned',
-    gene_id_key='gene_ids',
+    gene_id_key='index', #'gene_ids',
     pad_value=-2,
     load_model_dir='./data/scGPT_model',
     model_file_name="model.pt",
     raw_data_directory='./example/data/raw',
-    tokenized_file_path='./example/data/tokenized/scGPT/tokenized_data.pt'
+    tokenized_file_dir='./example/data/tokenized/scGPT'
 )
 
 """

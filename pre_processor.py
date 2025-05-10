@@ -55,11 +55,11 @@ class PreProcessor:
         self.output_filepath = output_filepath
         self.gene_info_mapping = gene_info_mapping
 
-    '''
-    Add required attributions and generate the output file.
-    '''
 
     def pre_process(self):
+        '''
+        Add required attributions and generate the output file.
+        '''
         adata = sc.read_h5ad(self.input_filepath)
         assert "gene_ids" in adata.var
 
@@ -75,9 +75,10 @@ class PreProcessor:
             # Add `n_counts` for each cell.
             adata.obs['n_counts'] = adata.X.sum(axis=1)
 
-            adata.write_h5ad(self.output_filepath, compression="gzip")
+            return adata.write_h5ad(self.output_filepath, compression="gzip")
 
         elif self.model_name == "scGPT":
+            # gene id to int
             return
 
         return print("Invalid model name")

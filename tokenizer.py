@@ -1,3 +1,8 @@
+import glob
+import os
+from pathlib import Path
+
+import numpy as np
 import scanpy as sc
 import torch
 from scipy.sparse import issparse
@@ -41,6 +46,7 @@ List of tuple (genes, tokenzied values) of non-zero gene expressions in .pt form
 
 """
 
+
 class Tokenizer:
     def __init__(self, model_name):
         """
@@ -57,29 +63,27 @@ class Tokenizer:
         Tokenize the pre-processed scRNAseq data.
         """
         if self.model_name == "Geneformer":
-            tk = TranscriptomeTokenizer(nproc=4)
-            tk.tokenize_data(
-                config.geneformer_configs['preprocess_data_directory'],
-                config.geneformer_configs['tokenized_file_directory'],
-                config.geneformer_configs['tokenized_file_prefix'], "h5ad")
+            tk = TranscriptomeTokenizer(nproc=1,
+                                        # For the 95M model series, model_input_size should be 4096.
+                                        model_input_size=4096)
+            return tk.tokenize_data(
+                data_directory=config.geneformer_configs['preprocess_data_directory'],
+                output_directory=config.geneformer_configs['tokenized_file_directory'],
+                output_prefix=config.geneformer_configs['tokenized_file_prefix'], file_format="h5ad")
 
         elif self.model_name == "scGPT":
-            for file_path in config.scgpt_configs['raw_data_directory'].glob(
-                    f"*.h5ad"):
+            for file_path in glob.glob(config.scgpt_configs['raw_data_directory'] + f"/*.h5ad"):
                 print(f"Tokenizing {file_path}")
                 adata = sc.read_h5ad(file_path)
-                input_data = (
-                    adata.layers[config.scgpt_configs['input_layer_key']].toarray()
-                    if issparse(
-                        adata.layers[config.scgpt_configs['input_layer_key']])
-                    else adata.layers[config.scgpt_configs['input_layer_key']])
+                input_data = (adata.X.toarray() if issparse(adata.X) else adata.X)
                 vocab = GeneVocab.from_file(
                     config.scgpt_configs['load_model_dir'] + "/vocab.json")
+                vocab.set_default_index(vocab[config.scgpt_configs['pad_token']])
+                gene_ids = np.array(vocab(adata.var.index.tolist()), dtype=int)
                 # Return a list of tuple (genes, values) of non-zero gene expressions.
                 # Return type: List[Tuple[torch.Tensor, torch.Tensor]].
                 tokenized_data = tokenize_and_pad_batch(data=input_data,
-                                                        gene_ids=adata.var[
-                                                            config.scgpt_configs['gene_id_key']].toarray(),
+                                                        gene_ids=gene_ids,
                                                         max_len=config.scgpt_configs['max_seq_len'],
                                                         vocab=vocab,
                                                         pad_token=config.scgpt_configs['pad_token'],
@@ -87,14 +91,14 @@ class Tokenizer:
                                                         append_cls=True,
                                                         include_zero_gene=config.scgpt_configs['include_zero_gene'],
                                                         cls_token=config.scgpt_configs['cls_token'])
-                torch.save(tokenized_data,
-                           config.scgpt_configs['tokenized_file_path'])
-                print(
-                    f"train set number of samples: {tokenized_data['genes'].shape[0]}, "
-                    f"\n\t feature length: {tokenized_data['genes'].shape[1]}")
+                os.makedirs(config.scgpt_configs['tokenized_file_dir'], exist_ok=True)
+                output_file_path = config.scgpt_configs['tokenized_file_dir'] + '/' + Path(file_path).stem + '.pt'
+                torch.save(tokenized_data, output_file_path)
+                print("Tokenized data saved in " + output_file_path)
+            return None
 
         return print("Invalid model name")
 
 
-t = Tokenizer("Geneformer")
+t = Tokenizer("scGPT")
 t.tokenize()
