@@ -83,5 +83,5 @@ class PreProcessor:
         return print("Invalid model name")
 
 
-p = PreProcessor()
+p = PreProcessor("Geneformer")
 p.pre_process()

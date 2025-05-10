@@ -21,6 +21,7 @@ Tokenize pre-processed scRNAseq data.
 Tokenized scRNAseq data in Anndata format.
 
 
+
 ** --------- scGPT ------------ **
 **Input data:**
 **Input data:**
@@ -40,7 +41,6 @@ List of tuple (genes, tokenzied values) of non-zero gene expressions in .pt form
 
 """
 
-
 class Tokenizer:
     def __init__(self, model_name):
         """
@@ -59,36 +59,36 @@ class Tokenizer:
         if self.model_name == "Geneformer":
             tk = TranscriptomeTokenizer(nproc=4)
             tk.tokenize_data(
-                config.geneformer_configs.preprocess_data_directory,
-                config.geneformer_configs.tokenized_file_directory,
-                config.geneformer_configs.tokenized_file_prefix, "h5ad")
+                config.geneformer_configs['preprocess_data_directory'],
+                config.geneformer_configs['tokenized_file_directory'],
+                config.geneformer_configs['tokenized_file_prefix'], "h5ad")
 
         elif self.model_name == "scGPT":
-            for file_path in config.scgpt_configs.raw_data_directory.glob(
+            for file_path in config.scgpt_configs['raw_data_directory'].glob(
                     f"*.h5ad"):
                 print(f"Tokenizing {file_path}")
                 adata = sc.read_h5ad(file_path)
                 input_data = (
-                    adata.layers[config.scgpt_configs.input_layer_key].toarray()
+                    adata.layers[config.scgpt_configs['input_layer_key']].toarray()
                     if issparse(
-                        adata.layers[config.scgpt_configs.input_layer_key])
-                    else adata.layers[config.scgpt_configs.input_layer_key])
+                        adata.layers[config.scgpt_configs['input_layer_key']])
+                    else adata.layers[config.scgpt_configs['input_layer_key']])
                 vocab = GeneVocab.from_file(
-                    config.scgpt_configs.load_model_dir + "/vocab.json")
+                    config.scgpt_configs['load_model_dir'] + "/vocab.json")
                 # Return a list of tuple (genes, values) of non-zero gene expressions.
                 # Return type: List[Tuple[torch.Tensor, torch.Tensor]].
                 tokenized_data = tokenize_and_pad_batch(data=input_data,
                                                         gene_ids=adata.var[
-                                                            config.scgpt_configs.gene_id_key].toarray(),
-                                                        max_len=config.scgpt_configs.max_seq_len,
+                                                            config.scgpt_configs['gene_id_key']].toarray(),
+                                                        max_len=config.scgpt_configs['max_seq_len'],
                                                         vocab=vocab,
-                                                        pad_token=config.scgpt_configs.pad_token,
-                                                        pad_value=config.scgpt_configs.pad_value,
+                                                        pad_token=config.scgpt_configs['pad_token'],
+                                                        pad_value=config.scgpt_configs['pad_value'],
                                                         append_cls=True,
-                                                        include_zero_gene=config.scgpt_configs.include_zero_gene,
-                                                        cls_token=config.scgpt_configs.cls_token)
+                                                        include_zero_gene=config.scgpt_configs['include_zero_gene'],
+                                                        cls_token=config.scgpt_configs['cls_token'])
                 torch.save(tokenized_data,
-                           config.scgpt_configs.configs.tokenized_file_path)
+                           config.scgpt_configs['tokenized_file_path'])
                 print(
                     f"train set number of samples: {tokenized_data['genes'].shape[0]}, "
                     f"\n\t feature length: {tokenized_data['genes'].shape[1]}")
