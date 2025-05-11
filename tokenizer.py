@@ -15,7 +15,7 @@ from models.scGPT.scgpt.tokenizer import tokenize_and_pad_batch, GeneVocab
 Tokenize pre-processed scRNAseq data.
 
 
-** --------- Geneformer ------------ **
+********************** Geneformer **********************
 **Input data:**
 | *Required format:* raw counts scRNAseq data without feature selection as anndata file.
 | *Required row (gene) attribute:* "ensembl_id"; Ensembl ID for each gene.
@@ -27,15 +27,14 @@ Tokenized scRNAseq data in Anndata format.
 
 
 
-** --------- scGPT ------------ **
-**Input data:**
+************************ scGPT *************************
 **Input data:**
 | *Required format:* raw counts scRNAseq data without feature selection as anndata file.
 | *Required row (gene) attribute:* "gene_id"; Gene symbol for each gene.
 | *Optional col (cell) attributes:* any other cell metadata can be passed on to the tokenized dataset as a custom attribute dictionary as shown below.
 
 **Output data:**
-List of tuple (genes, tokenzied values) of non-zero gene expressions in .pt format.
+List of tuple (genes, tokenized values) of non-zero gene expressions in .pt format.
 
 
 **Usage:**
@@ -60,7 +59,9 @@ class Tokenizer:
 
     def tokenize(self):
         """
-        Tokenize the pre-processed scRNAseq data.
+        Tokenize the pre-processed scRNAseq data for given model.
+        - Input: a directory of pre-processed scRNAseq data in Anndata format.
+        - Output: a directory of tokenized scRNAseq data in Anndata format.
         """
         if self.model_name == "Geneformer":
             tk = TranscriptomeTokenizer(nproc=1,

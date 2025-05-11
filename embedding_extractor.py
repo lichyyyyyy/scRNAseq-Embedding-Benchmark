@@ -1,18 +1,19 @@
+import os
+
+import config
 from models.Geneformer.geneformer import EmbExtractor
 
 """
 Generate embeddings for given scRNAseq data.
 
+********************** Geneformer **********************
 **Input data:**
-
-| *Required format:* raw counts scRNAseq data without feature selection as anndata file.
-| *Required row (gene) attribute:* "ensembl_id"; Ensembl ID for each gene.
-| *Required col (cell) attribute:* "n_counts"; total read counts in that cell.
-| *Optional col (cell) attributes:* any other cell metadata can be passed on to the tokenized dataset as a custom attribute dictionary as shown below.
-
+- Geneformer: Tokenized scRNAseq data in Anndata format.
+- scGPT: Tokenized scRNAseq data in .pt format.
 
 **Output data:**
 Single cell transcriptomics embeddings in cvs.
+
 
 
 **Usage:**
@@ -21,11 +22,7 @@ Single cell transcriptomics embeddings in cvs.
     emb_extractor.extract_embeddings()
 ```
 
-
 """
-
-GENEFORMER_PRE_TRAINED_MODEL_PATH = "models/Geneformer/gf-20L-95M-i4096"
-EXAMPLE_EMBEDDING_OUTPUT_DIRECTORY = "example/embedding/geneformer"
 
 
 class EmbeddingExtractor:
@@ -33,31 +30,31 @@ class EmbeddingExtractor:
         """
         Initialize embedding extractor.
 
-        :param model_name: {"Geneformer"}
+        :param model_name: {"Geneformer", "scGPT"}
             Name of the pretrained model.
         """
-        assert model_name in {"Geneformer"}, "Invalid model name"
+        assert model_name in {"Geneformer", "scGPT"}, "Invalid model name"
         self.model_name = model_name
 
-    def extract_embeddings(self,
-                           model_directory=GENEFORMER_PRE_TRAINED_MODEL_PATH,
-                           output_directory=EXAMPLE_EMBEDDING_OUTPUT_DIRECTORY,
-                           output_prefix="embedding"):
+    def extract_embeddings(self):
         """
         Extract transcriptomics embeddings for input scRNAseq data.
         """
         if self.model_name == "Geneformer":
             embex = EmbExtractor(model_type="Pretrained",
                                  num_classes=0,  # 0 for the pre-trained model
-                                 emb_mode="cell",
-                                 max_ncells=None,
+                                 emb_mode=config.geneformer_configs['embedding_mode'],  # {"cls", "cell", "gene"}
+                                 max_ncells=None,  # If None, will extract embeddings from all cells.
                                  emb_layer=-1,
-                                 forward_batch_size=10)
+                                 forward_batch_size=10,
+                                 nproc=4)
             return embex.extract_embs(
-                model_directory,
-                input_data_file,
-                output_directory,
-                output_prefix)
+                model_directory=config.geneformer_configs['pre_trained_model_path'],
+                input_data_file=os.path.join(config.geneformer_configs['tokenized_file_directory'],
+                                             config.geneformer_configs['tokenized_file_prefix'] + '.dataset'),
+                output_directory=config.geneformer_configs['embedding_output_directory'],
+                output_prefix=config.geneformer_configs['embedding_output_prefix'],
+                output_torch_embs=False)
 
         return print("Invalid model name")
 

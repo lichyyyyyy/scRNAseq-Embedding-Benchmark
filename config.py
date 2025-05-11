@@ -2,9 +2,16 @@
 Geneformer configs
 """
 geneformer_configs = dict(
+    # pre-processor
     preprocess_data_directory="./example/data/processed",
-    tokenized_file_directory="./example/data/tokenized/Geneformer/tokenized.dataset",
-    tokenized_file_prefix='tokenized'
+    # tokenizer
+    tokenized_file_directory="./example/data/tokenized/Geneformer",
+    tokenized_file_prefix='tokenized',
+    # embedding extractor
+    pre_trained_model_path="data/pre_trainined_models/Geneformer/gf-20L-95M-i4096",
+    embedding_output_directory="example/embedding/Geneformer",
+    embedding_output_prefix="embedding",
+    embedding_mode="cls"
 )
 
 """
@@ -18,10 +25,10 @@ scgpt_configs = dict(
     input_layer_key='X_binned',
     gene_id_key='index', #'gene_ids',
     pad_value=-2,
-    load_model_dir='./data/scGPT_model',
+    load_model_dir='data/pre_trainined_models/scGPT',
     model_file_name="model.pt",
-    raw_data_directory='./example/data/raw',
-    tokenized_file_dir='./example/data/tokenized/scGPT'
+    raw_data_directory='example/data/raw',
+    tokenized_file_dir='example/data/tokenized/scGPT'
 )
 
 """

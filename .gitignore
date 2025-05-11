@@ -3,3 +3,4 @@
 .venv/
 data/scGPT_model/*.pt
 __pycache__/
+./example/data/raw/RCC_upload_final_raw_counts.h5ad
