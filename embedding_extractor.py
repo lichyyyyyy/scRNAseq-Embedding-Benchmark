@@ -50,7 +50,8 @@ class EmbeddingExtractor:
                                  forward_batch_size=10,
                                  nproc=4)
             return extractor.extract_embs(
-                model_directory=config.geneformer_configs['pre_trained_model_path'],
+                model_directory=os.path.join(config.geneformer_configs['load_model_dir'],
+                                             config.geneformer_configs['model_file_name']),
                 input_data_file=os.path.join(config.geneformer_configs['tokenized_file_directory'],
                                              config.geneformer_configs['tokenized_file_prefix'] + '.dataset'),
                 output_directory=config.geneformer_configs['embedding_output_directory'],

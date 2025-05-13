@@ -3,4 +3,4 @@
 .venv/
 __pycache__/
 example/data/raw/RCC_upload_final_raw_counts.h5ad
-models/scGPT/model/
+models/*/model/
