@@ -1,6 +1,7 @@
 .DS_Store
 .idea/
 .venv/
-./data/pre_trainined_models/
+data/pre_trainined_models/
 __pycache__/
 ./example/data/raw/RCC_upload_final_raw_counts.h5ad
+data/pre_trainined_models/scGPT/model.pt
