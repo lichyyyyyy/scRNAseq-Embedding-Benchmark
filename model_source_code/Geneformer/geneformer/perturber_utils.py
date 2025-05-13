@@ -182,11 +182,11 @@ def load_model(model_type, num_classes, model_directory, mode, quantize=False):
 
     # Handle device placement and PEFT
     if not quantize:
-        # Only move non-quantized models
+        # Only move non-quantized model_source_code
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
     elif peft_config:
-        # Apply PEFT for quantized models (except MTLCellClassifier and CellClassifier-QuantInf)
+        # Apply PEFT for quantized model_source_code (except MTLCellClassifier and CellClassifier-QuantInf)
         model.enable_input_require_grads()
         model = get_peft_model(model, peft_config)
 

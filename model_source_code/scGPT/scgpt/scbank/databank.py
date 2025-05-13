@@ -9,7 +9,7 @@ from scipy.sparse import spmatrix, csr_matrix
 from anndata import AnnData
 from datasets import Dataset, load_dataset
 
-from models.scGPT.scgpt.tokenizer import GeneVocab
+from model_source_code.scGPT.scgpt.tokenizer import GeneVocab
 from .data import DataTable, MetaInfo
 from .setting import Setting
 from . import logger

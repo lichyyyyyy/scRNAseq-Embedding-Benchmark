@@ -7,7 +7,7 @@ import scanpy as sc
 from scanpy.get import _get_obs_rep, _set_obs_rep
 from anndata import AnnData
 
-from models.scGPT.scgpt import logger
+from model_source_code.scGPT.scgpt import logger
 
 
 class Preprocessor:

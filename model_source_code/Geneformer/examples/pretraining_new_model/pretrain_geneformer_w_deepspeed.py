@@ -83,9 +83,9 @@ weight_decay = 0.001
 current_date = datetime.datetime.now(tz=timezone)
 datestamp = f"{str(current_date.year)[-2:]}{current_date.month:02d}{current_date.day:02d}_{current_date.strftime('%X').replace(':','')}"
 run_name = f"{datestamp}_geneformer_30M_L{num_layers}_emb{num_embed_dim}_SL{max_input_size}_E{epochs}_B{geneformer_batch_size}_LR{max_lr}_LS{lr_schedule_fn}_WU{warmup_steps}_O{optimizer}_DS{num_gpus}"
-training_output_dir = f"{rootdir}/models/{run_name}/"
+training_output_dir = f"{rootdir}/model_source_code/{run_name}/"
 logging_dir = f"{rootdir}/runs/{run_name}/"
-model_output_dir = os.path.join(training_output_dir, "models/")
+model_output_dir = os.path.join(training_output_dir, "model_source_code/")
 
 
 # ensure not overwriting previously saved model

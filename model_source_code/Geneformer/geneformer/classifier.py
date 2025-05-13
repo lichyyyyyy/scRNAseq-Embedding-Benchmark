@@ -1445,7 +1445,7 @@ class Classifier:
             | Prefix for output file
         custom_class_order : None, list
             | List of classes in custom order for plots.
-            | Same order will be used for all models.
+            | Same order will be used for all model_source_code.
         """
 
         for model_name in conf_mat_dict.keys():
@@ -1519,7 +1519,7 @@ class Classifier:
             | Prefix for output file
         custom_class_order : None, list
             | List of classes in custom order for plots.
-            | Same order will be used for all models.
+            | Same order will be used for all model_source_code.
         kwargs_dict : None, dict
             | Dictionary of kwargs to pass to plotting function.
         """

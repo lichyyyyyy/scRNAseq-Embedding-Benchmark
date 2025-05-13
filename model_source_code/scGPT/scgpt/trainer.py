@@ -9,13 +9,13 @@ import numpy as np
 from anndata import AnnData
 import scanpy as sc
 from typing import List, Tuple, Dict, Optional
-from models.scGPT.scgpt.tokenizer import tokenize_and_pad_batch, random_mask_value
-from models.scGPT.scgpt import SubsetsBatchSampler
-from models.scGPT.scgpt.loss import (
+from model_source_code.scGPT.scgpt.tokenizer import tokenize_and_pad_batch, random_mask_value
+from model_source_code.scGPT.scgpt import SubsetsBatchSampler
+from model_source_code.scGPT.scgpt.loss import (
     masked_relative_error,
     criterion_neg_log_bernoulli,
 )
-from models.scGPT.scgpt.utils import eval_scib_metrics
+from model_source_code.scGPT.scgpt.utils import eval_scib_metrics
 import warnings
 from scipy.sparse import issparse
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
