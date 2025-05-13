@@ -5,7 +5,8 @@
 Python version 3.10.
 
 To activate environment from `environment.txt` and please install the correct
-version of Torch and TorchText in this site: https://pytorch.org/get-started/locally.
+version of Torch and TorchText in this
+site: https://pytorch.org/get-started/locally.
 
 ```
 # Activate the virtual environment
@@ -22,6 +23,5 @@ source .venv/bin/deactivate
 |------------|-------------------|----------------------------------------------|
 | Geneformer | models/Geneformer | https://huggingface.co/ctheodoris/Geneformer |
 | scGPT      | models/scGPT      | https://github.com/bowang-lab/scGPT.git      |
-
 
 ## User Manual

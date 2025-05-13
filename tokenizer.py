@@ -5,11 +5,11 @@ from pathlib import Path
 import numpy as np
 import scanpy as sc
 import torch
+from model_source_code.scGPT.scgpt.tokenizer import tokenize_and_pad_batch, GeneVocab
 from scipy.sparse import issparse
+from transformers import AutoTokenizer
 
 import config
-from transformers import AutoTokenizer
-from model_source_code.scGPT.scgpt.tokenizer import tokenize_and_pad_batch, GeneVocab
 
 """
 Tokenize pre-processed scRNAseq data.

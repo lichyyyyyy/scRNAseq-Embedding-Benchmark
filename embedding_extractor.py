@@ -1,8 +1,8 @@
 import os
 
 import config
-from model_source_code.Geneformer.geneformer import EmbExtractor
-from model_source_code.scGPT.scgpt.tasks import GeneEmbedding
+from models.geneformer import EmbExtractor
+from models.scGPT import GeneEmbedding
 
 """
 Generate embeddings for given scRNAseq data.
