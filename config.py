@@ -15,8 +15,6 @@ preprocessor_configs = dict(
 Geneformer configs
 """
 geneformer_configs = dict(
-    # pre-processor
-    preprocess_data_directory="./example/data/processed",
     # tokenizer
     tokenized_file_directory="./example/data/tokenized/Geneformer",
     tokenized_file_prefix='tokenized',

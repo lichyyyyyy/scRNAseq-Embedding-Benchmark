@@ -2,7 +2,9 @@ import glob
 import os
 from pathlib import Path
 
-from config import scgpt_configs, geneformer_configs
+from transformers import AutoTokenizer
+
+from config import scgpt_configs, geneformer_configs, preprocessed_data_directory
 from models.geneformer import EmbExtractor
 from models.scGPT import embed_data
 
@@ -10,17 +12,17 @@ from models.scGPT import embed_data
 Generate embeddings for given scRNAseq data.
 
 **Input data:**
-- Geneformer: Tokenized scRNAseq data in Anndata format.
-- scGPT: Raw Anndata file.
+A directory of pre processed scRNAseq data in Anndata format.
 
 **Output data:**
-Single cell transcriptomics embeddings in cvs.
+A directory of single cell transcriptomics embeddings in cvs.
 
 
 
 **Usage:**
 ```
     emb_extractor = EmbeddingExtractor("Geneformer")
+    emb_extractor.tokenize()
     emb_extractor.extract_embeddings()
 ```
 
@@ -37,6 +39,22 @@ class EmbeddingExtractor:
         """
         assert model_name in {"Geneformer", "scGPT"}, "Invalid model name"
         self.model_name = model_name
+
+    def tokenize(self):
+        """
+        Tokenize the pre-processed scRNAseq data for given model.
+        """
+        if self.model_name == "Geneformer":
+            tk = AutoTokenizer.from_pretrained("ctheodoris/Geneformer", force_download=True)
+            return tk.tokenize_data(
+                data_directory=preprocessed_data_directory,
+                output_directory=geneformer_configs['tokenized_file_directory'],
+                output_prefix=geneformer_configs['tokenized_file_prefix'], file_format="h5ad")
+
+        elif self.model_name == "scGPT":
+            return None
+
+        return print("Invalid model name")
 
     def extract_embeddings(self):
         """
@@ -79,4 +97,5 @@ class EmbeddingExtractor:
 
 
 emb_extractor = EmbeddingExtractor("Geneformer")
+emb_extractor.tokenize()
 emb_extractor.extract_embeddings()
