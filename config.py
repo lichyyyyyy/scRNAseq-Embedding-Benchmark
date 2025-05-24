@@ -1,3 +1,16 @@
+raw_data_directory = 'example/data/raw'
+raw_data_filename = 'pbmc3k_raw.h5ad'
+preprocessed_data_directory = 'example/data/pre_processed'
+preprocessed_data_filename = 'pbmc3k_raw.h5ad'
+gene_info_table = 'data/gene_info_table.csv'
+
+preprocessor_configs = dict(
+    gene_key_col='gene_ids',
+    gene_key_type='ensembl_id',
+    data_file_type='Anndata',
+)
+
+
 """
 Geneformer configs
 """
@@ -19,17 +32,11 @@ geneformer_configs = dict(
 scGPT configs
 """
 scgpt_configs = dict(
-    max_seq_len=3001,
-    cls_token="<cls>",
-    pad_token="<pad>",
-    include_zero_gene=False,
-    input_layer_key='X_binned',
-    gene_id_key='index', #'gene_ids',
-    pad_value=-2,
     load_model_dir='models/scGPT/model/',
     model_file_name="model.pt",
-    raw_data_directory='example/data/raw',
-    tokenized_file_dir='example/data/tokenized/scGPT'
+    tokenized_file_dir='example/data/tokenized/scGPT',
+    embedding_output_directory="example/embedding/scGPT/",
+    embedding_output_prefix="embedding",
 )
 
 """

@@ -5,11 +5,12 @@ from pathlib import Path
 import numpy as np
 import scanpy as sc
 import torch
-from model_source_code.scGPT.scgpt.tokenizer import tokenize_and_pad_batch, GeneVocab
 from scipy.sparse import issparse
 from transformers import AutoTokenizer
 
 import config
+from models.scGPT import tokenize_and_pad_batch
+from models.scGPT.gene_tokenizer import GeneVocab
 
 """
 Tokenize pre-processed scRNAseq data.
@@ -26,15 +27,8 @@ Tokenize pre-processed scRNAseq data.
 Tokenized scRNAseq data in Anndata format.
 
 
-
 ************************ scGPT *************************
-**Input data:**
-| *Required format:* raw counts scRNAseq data without feature selection as anndata file.
-| *Required row (gene) attribute:* "gene_id"; Gene symbol for each gene.
-| *Optional col (cell) attributes:* any other cell metadata can be passed on to the tokenized dataset as a custom attribute dictionary as shown below.
-
-**Output data:**
-List of tuple (genes, tokenized values) of non-zero gene expressions in .pt format.
+Skipped. Tokenized scRNAseq data in the embedding extractor.
 
 
 **Usage:**
@@ -74,29 +68,6 @@ class Tokenizer:
                 output_prefix=config.geneformer_configs['tokenized_file_prefix'], file_format="h5ad")
 
         elif self.model_name == "scGPT":
-            for file_path in glob.glob(config.scgpt_configs['raw_data_directory'] + f"/*.h5ad"):
-                print(f"Tokenizing {file_path}")
-                adata = sc.read_h5ad(file_path)
-                input_data = (adata.X.toarray() if issparse(adata.X) else adata.X)
-                vocab = GeneVocab.from_file(
-                    config.scgpt_configs['load_model_dir'] + "/vocab.json")
-                vocab.set_default_index(vocab[config.scgpt_configs['pad_token']])
-                gene_ids = np.array(vocab(adata.var.index.tolist()), dtype=int)
-                # Return a list of tuple (genes, values) of non-zero gene expressions.
-                # Return type: List[Tuple[torch.Tensor, torch.Tensor]].
-                tokenized_data = tokenize_and_pad_batch(data=input_data,
-                                                        gene_ids=gene_ids,
-                                                        max_len=config.scgpt_configs['max_seq_len'],
-                                                        vocab=vocab,
-                                                        pad_token=config.scgpt_configs['pad_token'],
-                                                        pad_value=config.scgpt_configs['pad_value'],
-                                                        append_cls=True,
-                                                        include_zero_gene=config.scgpt_configs['include_zero_gene'],
-                                                        cls_token=config.scgpt_configs['cls_token'])
-                os.makedirs(config.scgpt_configs['tokenized_file_dir'], exist_ok=True)
-                output_file_path = config.scgpt_configs['tokenized_file_dir'] + '/' + Path(file_path).stem + '.pt'
-                torch.save(tokenized_data, output_file_path)
-                print("Tokenized data saved in " + output_file_path)
             return None
 
         return print("Invalid model name")

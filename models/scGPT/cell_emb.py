@@ -10,11 +10,10 @@ from anndata import AnnData
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 
-from .. import logger
-from ..data_collator import DataCollator
-from ..model import TransformerModel
-from ..tokenizer import GeneVocab
-from ..utils import load_pretrained
+from data_collator import DataCollator
+from model import TransformerModel
+from tokenizer import GeneVocab
+from util import load_pretrained
 
 PathLike = Union[str, os.PathLike]
 
@@ -213,10 +212,6 @@ def embed_data(
         vocab[gene] if gene in vocab else -1 for gene in adata.var[gene_col]
     ]
     gene_ids_in_vocab = np.array(adata.var["id_in_vocab"])
-    logger.info(
-        f"match {np.sum(gene_ids_in_vocab >= 0)}/{len(gene_ids_in_vocab)} genes "
-        f"in vocabulary of size {len(vocab)}."
-    )
     adata = adata[:, adata.var["id_in_vocab"] >= 0]
 
     with open(model_config_file, "r") as f:

@@ -1,4 +1,4 @@
-,ensembl_id,gene_name,gene_type
+,ensembl_id,gene_symbol,gene_type
 0,ENSG00000000003,TSPAN6,protein_coding
 1,ENSG00000000005,TNMD,protein_coding
 2,ENSG00000000419,DPM1,protein_coding

@@ -17,4 +17,4 @@ if not logger.hasHandlers() or len(logger.handlers) == 0:
 
 from .grn import GeneEmbedding
 from .cell_emb import get_batch_cell_embeddings, embed_data
-from .gene_tokenizer import *
+from .gene_tokenizer import tokenize_and_pad_batch
