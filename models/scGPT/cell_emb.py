@@ -10,10 +10,10 @@ from anndata import AnnData
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 
-from data_collator import DataCollator
-from model import TransformerModel
-from tokenizer import GeneVocab
-from util import load_pretrained
+from .data_collator import DataCollator
+from .model import TransformerModel
+from .gene_tokenizer import GeneVocab
+from .util import load_pretrained
 
 PathLike = Union[str, os.PathLike]
 

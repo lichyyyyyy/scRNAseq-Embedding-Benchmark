@@ -25,7 +25,6 @@ from tdigest import TDigest
 from tqdm.auto import trange
 
 from . import TOKEN_DICTIONARY_FILE
-from . import perturber_utils as pu
 
 logger = logging.getLogger(__name__)
 
