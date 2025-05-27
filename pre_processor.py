@@ -3,58 +3,71 @@ Data pre-processor.
 
 **Input data:**
 Sc RNA seq in Anndata format (.h5ad).
-| *Required row (gene) attribute:* "gene_ids"; ID (name) for each gene.
+| *Required row (gene) attribute:* "gene_ids", type: {"ensemble_id", "gene_symbol"}
 
 **Output data:**
 Sc RNA seq in Anndata format (.h5ad).
-| *Required row (gene) attribute:* "ensembl_id"; Ensembl ID for each gene.
-| *Required col (cell) attribute:* "n_counts"; total read counts in that cell.
-
+| *"ensemble_id": Ensembl ID
+| *"gene_name": gene symbol
+| *"n_counts"; total read counts in that cell.
 
 **Usage:**
 ```
-    p = PreProcessor()
-    p.pre_process()
+PreProcessor.pre_process()
 ```
 
 
 """
+import os
 
 import pandas as pd
 import scanpy as sc
 
-# Example scRNAseq data sample from https://scanpy.readthedocs.io/en/stable/generated/scanpy.datasets.pbmc3k.html#scanpy.datasets.pbmc3k
-EXAMPLE_INPUT_FILE_PATH = "example/data/pbmc3k_raw.h5ad"
-EXAMPLE_OUTPUT_FILE_PATH = "example/data/processed/pbmc3k_processed.h5ad"
-DEFAULT_GENE_INFO_MAPPING_FILE = "data/gene_info_table.csv"
+import config
 
+
+# Example scRNAseq data sample from https://scanpy.readthedocs.io/en/stable/generated/scanpy.datasets.pbmc3k.html#scanpy.datasets.pbmc3k
 
 class PreProcessor:
-    def __init__(self, input_filepath=EXAMPLE_INPUT_FILE_PATH,
-                 output_filepath=EXAMPLE_OUTPUT_FILE_PATH,
-                 gene_info_mapping=DEFAULT_GENE_INFO_MAPPING_FILE):
-        self.input_filepath = input_filepath
-        self.output_filepath = output_filepath
-        self.gene_info_mapping = gene_info_mapping
+    @staticmethod
+    def pre_process(gene_key_col=config.preprocessor_configs['gene_key_col'],
+                    gene_key_type=config.preprocessor_configs['gene_key_type'],
+                    file_type=config.preprocessor_configs['data_file_type'],
+                    raw_data_directory: str = config.raw_data_directory,
+                    raw_data_filename: str = config.raw_data_filename,
+                    preprocessed_data_directory: str = config.preprocessed_data_directory,
+                    preprocessed_data_filename: str = config.preprocessed_data_filename):
+        """
+        Pre-process the Anndata file.
+        :param gene_key_col: str
+            The column name of the gene key/ ID column.
+        :param gene_key_type: {"gene_symbol", "ensembl_id"}
+            The type of the gene key / ID.
+        :param file_type: {"Anndata"}
+        """
+        assert file_type in {"Anndata"}, "Unsupported file type"
+        assert gene_key_type in {"gene_symbol", "ensembl_id"}, "Unsupported gene key system"
 
-    '''
-    Add required attributions and generate the output file.
-    '''
+        input_filepath = os.path.join(raw_data_directory, raw_data_filename)
+        output_filepath = os.path.join(preprocessed_data_directory, preprocessed_data_filename)
+        os.makedirs(preprocessed_data_directory, exist_ok=True)
 
-    def pre_process(self):
-        adata = sc.read_h5ad(self.input_filepath)
+        if file_type == "Anndata":
+            adata = sc.read_h5ad(input_filepath)
+            assert gene_key_col in adata.var, "Gene key column not found in Anndata file"
 
-        # Add `ensembl_id` for each gene.
-        gene_info_table = pd.read_csv(self.gene_info_mapping)
-        gene_name_to_ensembl = dict(
-            zip(gene_info_table['gene_name'], gene_info_table['ensembl_id']))
-        adata.var['ensembl_id'] = adata.var.index.map(gene_name_to_ensembl)
+            gene_info_table = pd.read_csv(config.gene_info_table)
 
-        # Add `n_counts` for each cell.
-        adata.obs['n_counts'] = adata.X.sum(axis=1)
+            # Add `ensembl_id`, `gene_symbol` for each gene.
+            adata.var = pd.merge(adata.var, gene_info_table, how='left',
+                                 left_on=config.preprocessor_configs['gene_key_col'], right_on=gene_key_type)
+            adata.var = adata.var[['gene_symbol', 'ensembl_id', 'gene_type']]
 
-        adata.write_h5ad(self.output_filepath, compression="gzip")
+            # Add `n_counts` for each cell.
+            adata.obs['n_counts'] = adata.X.sum(axis=1)
+            return adata.write_h5ad(output_filepath, compression="gzip")
+
+        return print("Invalid model name")
 
 
-p = PreProcessor()
-p.pre_process()
+PreProcessor.pre_process()
