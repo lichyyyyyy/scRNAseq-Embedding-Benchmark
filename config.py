@@ -43,9 +43,10 @@ genept_configs = dict(
     embedding_file_name='GenePT_gene_embedding_ada_text.pickle',
     genept_w_embedding_output_directory="example/embedding/genePT_w/",
     genept_s_embedding_output_directory="example/embedding/genePT_s/",
-    genept_s_openai_model_name='text-embedding-3-small',  # 'text-embedding-ada-002',
+    genept_s_openai_model_name='text-embedding-ada-002',
     embedding_output_prefix="embedding_",
-    openai_api_key=''  # remember to set your open AI API key!
+    openai_api_key=''
+    # remember to set your open AI API key!
 )
 
 """

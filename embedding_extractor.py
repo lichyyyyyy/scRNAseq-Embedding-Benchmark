@@ -11,7 +11,8 @@ from transformers import AutoTokenizer
 
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
 from models.geneformer import EmbExtractor
-from models.scGPT import embed_data
+
+# from models.scGPT import embed_data
 
 """
 Generate embeddings for given scRNAseq data.
@@ -83,24 +84,24 @@ class EmbeddingExtractor:
                 output_prefix=geneformer_configs['embedding_output_prefix'],
                 output_torch_embs=False)
 
-        elif self.model_name == "scGPT":
-            print("Extracting scGPT embeddings")
-            for file_path in glob.glob(preprocessed_data_directory + f"/*.h5ad"):
-                print(f"Embedding {file_path}")
-                embed_adata = embed_data(
-                    adata_or_file=file_path,
-                    model_dir=scgpt_configs['load_model_dir'],
-                    gene_col="gene_name",
-                    max_length=1200,
-                    batch_size=64,
-                    obs_to_save=None,
-                    use_fast_transformer=True,
-                    return_new_adata=False)
-                output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
-                    'embedding_output_prefix'] + Path(
-                    file_path).stem + '.csv'
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                embed_adata.obsm['X_scGPT'].to_csv(output_path, index=False, header=False)
+        # elif self.model_name == "scGPT":
+        #     print("Extracting scGPT embeddings")
+        #     for file_path in glob.glob(preprocessed_data_directory + f"/*.h5ad"):
+        #         print(f"Embedding {file_path}")
+        #         embed_adata = embed_data(
+        #             adata_or_file=file_path,
+        #             model_dir=scgpt_configs['load_model_dir'],
+        #             gene_col="gene_name",
+        #             max_length=1200,
+        #             batch_size=64,
+        #             obs_to_save=None,
+        #             use_fast_transformer=True,
+        #             return_new_adata=False)
+        #         output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
+        #             'embedding_output_prefix'] + Path(
+        #             file_path).stem + '.csv'
+        #         os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        #         embed_adata.obsm['X_scGPT'].to_csv(output_path, index=False, header=False)
 
         elif self.model_name == "genePT-w":
             print("Extracting gene PT-W embeddings")
