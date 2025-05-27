@@ -1,5 +1,6 @@
 import json
 import os
+import platform
 from pathlib import Path
 from typing import Optional, Union
 
@@ -10,24 +11,24 @@ from anndata import AnnData
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 
-from .data_collator import DataCollator
-from .model import TransformerModel
-from .gene_tokenizer import GeneVocab
-from .util import load_pretrained
+from models.scGPT.data_collator import DataCollator
+from models.scGPT.gene_tokenizer import GeneVocab
+from models.scGPT.model import TransformerModel
+from models.scGPT.util import load_pretrained
 
 PathLike = Union[str, os.PathLike]
 
 
 def get_batch_cell_embeddings(
-    adata,
-    cell_embedding_mode: str = "cls",
-    model=None,
-    vocab=None,
-    max_length=1200,
-    batch_size=64,
-    model_configs=None,
-    gene_ids=None,
-    use_batch_labels=False,
+        adata,
+        cell_embedding_mode: str = "cls",
+        model=None,
+        vocab=None,
+        max_length=1200,
+        batch_size=64,
+        model_configs=None,
+        gene_ids=None,
+        use_batch_labels=False,
 ) -> np.ndarray:
     """
     Get the cell embeddings for a batch of cells.
@@ -108,7 +109,7 @@ def get_batch_cell_embeddings(
             sampler=SequentialSampler(dataset),
             collate_fn=collator,
             drop_last=False,
-            num_workers=min(len(os.sched_getaffinity(0)), batch_size),
+            num_workers=min(len(os.sched_getaffinity(0)) if platform.system() == "Linux" else 0, batch_size),
             pin_memory=True,
         )
 
@@ -134,7 +135,7 @@ def get_batch_cell_embeddings(
 
                 embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
                 embeddings = embeddings.cpu().numpy()
-                cell_embeddings[count : count + len(embeddings)] = embeddings
+                cell_embeddings[count: count + len(embeddings)] = embeddings
                 count += len(embeddings)
         cell_embeddings = cell_embeddings / np.linalg.norm(
             cell_embeddings, axis=1, keepdims=True
@@ -145,15 +146,15 @@ def get_batch_cell_embeddings(
 
 
 def embed_data(
-    adata_or_file: Union[AnnData, PathLike],
-    model_dir: PathLike,
-    gene_col: str = "feature_name",
-    max_length=1200,
-    batch_size=64,
-    obs_to_save: Optional[list] = None,
-    device: Union[str, torch.device] = "cuda",
-    use_fast_transformer: bool = True,
-    return_new_adata: bool = False,
+        adata_or_file: Union[AnnData, PathLike],
+        model_dir: PathLike,
+        gene_col: str = "feature_name",
+        max_length=1200,
+        batch_size=64,
+        obs_to_save: Optional[list] = None,
+        device: Union[str, torch.device] = "cuda",
+        use_fast_transformer: bool = True,
+        return_new_adata: bool = False,
 ) -> AnnData:
     """
     Preprocess anndata and embed the data using the model.
@@ -199,7 +200,7 @@ def embed_data(
     model_dir = Path(model_dir)
     vocab_file = model_dir / "vocab.json"
     model_config_file = model_dir / "args.json"
-    model_file = model_dir / "best_model.pt"
+    model_file = model_dir / "model.pt"
     pad_token = "<pad>"
     special_tokens = [pad_token, "<cls>", "<eoc>"]
 

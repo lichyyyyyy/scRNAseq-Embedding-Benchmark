@@ -22,7 +22,7 @@ source .venv/bin/deactivate
 | Model Name | Embedding Dimension | Repo URL                                                                                  |
 |------------|---------------------|-------------------------------------------------------------------------------------------|
 | Geneformer | 895                 | https://huggingface.co/ctheodoris/Geneformer                                              |
-| scGPT      |                     | https://github.com/bowang-lab/scGPT.git                                                   |
+| scGPT      | 512                 | https://github.com/bowang-lab/scGPT.git                                                   |
 | genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
 
 

@@ -1,6 +1,7 @@
 import glob
 import os
 import pickle
+import platform
 from pathlib import Path
 
 import numpy as np
@@ -92,17 +93,18 @@ class EmbeddingExtractor:
                 embed_adata = embed_data(
                     adata_or_file=file_path,
                     model_dir=scgpt_configs['load_model_dir'],
-                    gene_col="gene_name",
+                    gene_col="gene_symbol",
                     max_length=1200,
                     batch_size=64,
                     obs_to_save=None,
-                    use_fast_transformer=True,
+                    use_fast_transformer=(platform.system() == "Linux"),
                     return_new_adata=False)
                 output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
                     'embedding_output_prefix'] + Path(
                     file_path).stem + '.csv'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                embed_adata.obsm['X_scGPT'].to_csv(output_path, index=False, header=False)
+                np.savetxt(output_path, embed_adata.obsm['X_scGPT'], delimiter=",")
+            return None
 
         elif self.model_name == "genePT-w":
             print("Extracting gene PT-W embeddings")
@@ -183,6 +185,6 @@ class EmbeddingExtractor:
         return print("Invalid model name")
 
 
-emb_extractor = EmbeddingExtractor("genePT-w")
+emb_extractor = EmbeddingExtractor("scGPT")
 emb_extractor.tokenize()
 emb_extractor.extract_embeddings()

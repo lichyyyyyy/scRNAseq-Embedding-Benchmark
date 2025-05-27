@@ -56,4 +56,4 @@ def download_genept_data():
     print(f"✅ File downloaded to: {genept_configs['load_model_dir']}")
 
 
-download_genept_data()
+download_geneformer_model()
