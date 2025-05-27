@@ -41,9 +41,10 @@ def map_gene_id():
             if idx % 100 == 0:
                 print(f"Processing {idx} out of {gene_info_table.shape[0]}")
 
-        finally:
+        except Exception as e:
             missing_cnt += 1
             print(f"❌ request error for ：{ensembl_id}")
+            print(e)
             continue
 
     expanded_gene_info_table.to_csv('data/expanded_gene_info_table.csv', header=True, index=False)
