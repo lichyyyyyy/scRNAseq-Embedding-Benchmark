@@ -19,9 +19,10 @@ source .venv/bin/deactivate
 
 ## Included Models
 
-| Model Name | Path              | Repo URL                                     |
-|------------|-------------------|----------------------------------------------|
-| Geneformer | models/Geneformer | https://huggingface.co/ctheodoris/Geneformer |
-| scGPT      | models/scGPT      | https://github.com/bowang-lab/scGPT.git      |
+| Model Name | Embedding Dimension | Repo URL                                                                                  |
+|------------|---------------------|-------------------------------------------------------------------------------------------|
+| Geneformer | 895                 | https://huggingface.co/ctheodoris/Geneformer                                              |
+| scGPT      |                     | https://github.com/bowang-lab/scGPT.git                                                   |
+| genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
 
-## User Manual
+

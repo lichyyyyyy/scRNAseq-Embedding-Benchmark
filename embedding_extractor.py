@@ -7,12 +7,13 @@ import numpy as np
 import openai
 import pandas as pd
 import scanpy as sc
+import torch
+from scipy.sparse import issparse
 from transformers import AutoTokenizer
 
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
 from models.geneformer import EmbExtractor
-
-# from models.scGPT import embed_data
+from models.scGPT import embed_data
 
 """
 Generate embeddings for given scRNAseq data.
@@ -84,28 +85,27 @@ class EmbeddingExtractor:
                 output_prefix=geneformer_configs['embedding_output_prefix'],
                 output_torch_embs=False)
 
-        # elif self.model_name == "scGPT":
-        #     print("Extracting scGPT embeddings")
-        #     for file_path in glob.glob(preprocessed_data_directory + f"/*.h5ad"):
-        #         print(f"Embedding {file_path}")
-        #         embed_adata = embed_data(
-        #             adata_or_file=file_path,
-        #             model_dir=scgpt_configs['load_model_dir'],
-        #             gene_col="gene_name",
-        #             max_length=1200,
-        #             batch_size=64,
-        #             obs_to_save=None,
-        #             use_fast_transformer=True,
-        #             return_new_adata=False)
-        #         output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
-        #             'embedding_output_prefix'] + Path(
-        #             file_path).stem + '.csv'
-        #         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        #         embed_adata.obsm['X_scGPT'].to_csv(output_path, index=False, header=False)
+        elif self.model_name == "scGPT":
+            print("Extracting scGPT embeddings")
+            for file_path in glob.glob(preprocessed_data_directory + f"/*.h5ad"):
+                print(f"Embedding {file_path}")
+                embed_adata = embed_data(
+                    adata_or_file=file_path,
+                    model_dir=scgpt_configs['load_model_dir'],
+                    gene_col="gene_name",
+                    max_length=1200,
+                    batch_size=64,
+                    obs_to_save=None,
+                    use_fast_transformer=True,
+                    return_new_adata=False)
+                output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
+                    'embedding_output_prefix'] + Path(
+                    file_path).stem + '.csv'
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                embed_adata.obsm['X_scGPT'].to_csv(output_path, index=False, header=False)
 
         elif self.model_name == "genePT-w":
             print("Extracting gene PT-W embeddings")
-            print("Loading pre-computed gene embeddings...")
             with open(os.path.join(genept_configs['load_model_dir'], genept_configs['embedding_file_name']),
                       'rb') as fp:
                 genept_embedding_data = pickle.load(fp)
@@ -121,12 +121,14 @@ class EmbeddingExtractor:
                         lookup_embed[i] = genept_embedding_data[gene]
                     else:
                         count_missing += 1
-                genePT_w_emebed = np.dot(adata.X, lookup_embed) / len(gene_names)
+                adata_torch = torch.tensor(adata.X.toarray() if issparse(adata.X) else adata.X, dtype=torch.float32)
+                lookup_embed_torch = torch.tensor(lookup_embed, dtype=torch.float32)
+                genePT_w_emebed = torch.divide(torch.matmul(adata_torch, lookup_embed_torch), len(gene_names)).numpy()
                 output_path = genept_configs['genept_w_embedding_output_directory'] + genept_configs[
                     'embedding_output_prefix'] + Path(
                     file_path).stem + '.csv'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                genePT_w_emebed.to_csv(output_path, index=False, header=False)
+                np.savetxt(output_path, genePT_w_emebed, delimiter=",")
                 print(f"Unable to match {count_missing} out of {len(gene_names)} genes in the GenePT-w embedding")
                 print(f"Output embedding in {output_path}")
             return None
@@ -181,6 +183,6 @@ class EmbeddingExtractor:
         return print("Invalid model name")
 
 
-emb_extractor = EmbeddingExtractor("genePT-s")
+emb_extractor = EmbeddingExtractor("genePT-w")
 emb_extractor.tokenize()
 emb_extractor.extract_embeddings()

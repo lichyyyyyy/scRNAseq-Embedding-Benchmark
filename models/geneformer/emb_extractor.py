@@ -441,6 +441,7 @@ class EmbExtractor:
         cell_emb_style : {"mean_pool"}
             | Method for summarizing cell embeddings if not using CLS token.
             | Currently only option is mean pooling of gene embeddings for given cell.
+            | Currently only option is mean pooling of gene embeddings for given cell.
         gene_emb_style : "mean_pool"
             | Method for summarizing gene embeddings.
             | Currently only option is mean pooling of contextual gene embeddings for given gene.

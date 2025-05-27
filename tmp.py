@@ -12,7 +12,7 @@ def map_gene_id():
     missing_cnt = 0
     total_cnt = 0
     expanded_gene_info_table = gene_info_table
-    for idx, ensembl_id in enumerate(gene_info_table['ensembl_id']):
+    for idx, ensembl_id in enumerate(gene_info_table['ensembl_id'][40000:]):
         total_cnt += 1
         try:
             result = mg.query(ensembl_id, scopes='ensembl.gene', fields='entrezgene,refseq,ensembl.gene')
@@ -47,7 +47,7 @@ def map_gene_id():
             print(e)
             continue
 
-    expanded_gene_info_table.to_csv('data/expanded_gene_info_table.csv', header=True, index=False)
+    expanded_gene_info_table.to_csv('data/expanded_gene_info_table-3.csv', header=True, index=False)
     print(f"success rate: {missing_cnt/total_cnt} missing: {missing_cnt} total: {total_cnt}")
 
 
