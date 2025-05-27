@@ -48,7 +48,7 @@ def map_gene_id():
             continue
 
     expanded_gene_info_table.to_csv('data/expanded_gene_info_table-3.csv', header=True, index=False)
-    print(f"success rate: {missing_cnt/total_cnt} missing: {missing_cnt} total: {total_cnt}")
+    print(f"success rate: {missing_cnt/total_cnt} missing: {missing_cnt} total: {total_cnt}")\
 
 
 map_gene_id()

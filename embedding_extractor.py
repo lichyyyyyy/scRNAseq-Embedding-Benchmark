@@ -185,6 +185,6 @@ class EmbeddingExtractor:
         return print("Invalid model name")
 
 
-emb_extractor = EmbeddingExtractor("scGPT")
+emb_extractor = EmbeddingExtractor("genePT-w")
 emb_extractor.tokenize()
 emb_extractor.extract_embeddings()
