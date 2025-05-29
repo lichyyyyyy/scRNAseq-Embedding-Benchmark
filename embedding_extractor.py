@@ -13,7 +13,7 @@ from scipy.sparse import issparse
 from transformers import AutoTokenizer
 
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
-from models.geneformer import EmbExtractor
+from models.geneformer import EmbExtractor, TranscriptomeTokenizer
 from models.scGPT import embed_data
 
 """
@@ -53,7 +53,7 @@ class EmbeddingExtractor:
         Tokenize the pre-processed scRNAseq data for given model.
         """
         if self.model_name == "Geneformer":
-            tk = AutoTokenizer.from_pretrained("ctheodoris/Geneformer", force_download=True)
+            tk = TranscriptomeTokenizer(special_token=True)
             return tk.tokenize_data(
                 data_directory=preprocessed_data_directory,
                 output_directory=geneformer_configs['tokenized_file_directory'],
@@ -77,7 +77,7 @@ class EmbeddingExtractor:
                                      emb_layer=-1,
                                      forward_batch_size=10,
                                      nproc=4)
-            return extractor.extract_embs(
+            extractor.extract_embs(
                 model_directory=os.path.join(geneformer_configs['load_model_dir'],
                                              geneformer_configs['model_file_name']),
                 input_data_file=os.path.join(geneformer_configs['tokenized_file_directory'],
@@ -85,6 +85,7 @@ class EmbeddingExtractor:
                 output_directory=geneformer_configs['embedding_output_directory'],
                 output_prefix=geneformer_configs['embedding_output_prefix'],
                 output_torch_embs=False)
+            return print(f"Output embedding in {geneformer_configs['embedding_output_directory']}")
 
         elif self.model_name == "scGPT":
             print("Extracting scGPT embeddings")
@@ -104,6 +105,7 @@ class EmbeddingExtractor:
                     file_path).stem + '.csv'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 np.savetxt(output_path, embed_adata.obsm['X_scGPT'], delimiter=",")
+                print(f"Output embedding in {output_path}")
             return None
 
         elif self.model_name == "genePT-w":
@@ -185,6 +187,6 @@ class EmbeddingExtractor:
         return print("Invalid model name")
 
 
-emb_extractor = EmbeddingExtractor("genePT-w")
+emb_extractor = EmbeddingExtractor("Geneformer")
 emb_extractor.tokenize()
 emb_extractor.extract_embeddings()
