@@ -1,12 +1,10 @@
-raw_data_directory = 'example/data/raw'
-raw_data_filename = 'demo_cells_2k.h5ad'
-preprocessed_data_directory = 'example/data/pre_processed'
-preprocessed_data_filename = 'demo_cells_2k.h5ad'
 gene_info_table = 'data/expanded_gene_info_table.csv'
+raw_data_directory = 'example/data/raw'
+preprocessed_data_directory = 'example/data/pre_processed'
 
 preprocessor_configs = dict(
-    gene_key_type='gene_symbol',
-    data_file_type='Anndata',
+    gene_key_type='gene_symbol',  # The type of the gene index.
+    file_format='h5ad',  # The type of input files.
 )
 
 """

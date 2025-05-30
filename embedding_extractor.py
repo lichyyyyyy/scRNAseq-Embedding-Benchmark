@@ -207,4 +207,4 @@ class EmbeddingExtractor:
 
 emb_extractor = EmbeddingExtractor("Geneformer")
 emb_extractor.tokenize()
-# emb_extractor.extract_embeddings()
+emb_extractor.extract_embeddings()
