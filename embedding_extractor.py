@@ -6,11 +6,9 @@ from pathlib import Path
 
 import numpy as np
 import openai
-import pandas as pd
 import scanpy as sc
 import torch
 from scipy.sparse import issparse
-from transformers import AutoTokenizer
 
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
 from models.geneformer import EmbExtractor, TranscriptomeTokenizer
@@ -53,7 +51,12 @@ class EmbeddingExtractor:
         Tokenize the pre-processed scRNAseq data for given model.
         """
         if self.model_name == "Geneformer":
-            tk = TranscriptomeTokenizer(special_token=True)
+            custom_attr_name_dict = {}
+            for attr_name in geneformer_configs['custom_cell_attr_names']:
+                custom_attr_name_dict[attr_name] = attr_name
+            tk = TranscriptomeTokenizer(
+                custom_attr_name_dict=custom_attr_name_dict,
+                special_token=True)
             return tk.tokenize_data(
                 data_directory=preprocessed_data_directory,
                 output_directory=geneformer_configs['tokenized_file_directory'],
@@ -104,7 +107,12 @@ class EmbeddingExtractor:
                     'embedding_output_prefix'] + Path(
                     file_path).stem + '.csv'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                np.savetxt(output_path, embed_adata.obsm['X_scGPT'], delimiter=",")
+                output_np = np.empty(
+                    (embed_adata.obsm['X_scGPT'].shape[0], 1 + len(scgpt_configs['custom_cell_attr_names'])))
+                for attr_name in scgpt_configs['custom_cell_attr_names']:
+                    output_np = np.hstack((output_np, embed_adata.obs[attr_name]))
+                output_np = np.hstack((output_np, embed_adata.obsm['X_scGPT']))
+                np.savetxt(output_path, output_np, delimiter=",")
                 print(f"Output embedding in {output_path}")
             return None
 
@@ -132,7 +140,12 @@ class EmbeddingExtractor:
                     'embedding_output_prefix'] + Path(
                     file_path).stem + '.csv'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                np.savetxt(output_path, genePT_w_emebed, delimiter=",")
+                output_np = np.empty(
+                    (genePT_w_emebed.shape[0], 1 + len(genept_configs['custom_cell_attr_names'])))
+                for attr_name in genept_configs['custom_cell_attr_names']:
+                    output_np = np.hstack((output_np, adata.obs[attr_name]))
+                output_np = np.hstack((output_np, genePT_w_emebed))
+                np.savetxt(output_path, output_np, delimiter=",")
                 print(f"Unable to match {count_missing} out of {len(gene_names)} genes in the GenePT-w embedding")
                 print(f"Output embedding in {output_path}")
             return None
@@ -179,7 +192,12 @@ class EmbeddingExtractor:
                     'embedding_output_prefix'] + Path(
                     file_path).stem + '.csv'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                pd.DataFrame(embeddings).to_csv(output_path, index=False, header=False)
+                output_np = np.empty(
+                    (len(embeddings), 1 + len(genept_configs['custom_cell_attr_names'])))
+                for attr_name in genept_configs['custom_cell_attr_names']:
+                    output_np = np.hstack((output_np, adata.obs[attr_name]))
+                output_np = np.hstack((output_np, embeddings))
+                np.savetxt(output_path, output_np, delimiter=",")
                 print(f"Generated {len(embeddings)} embeddings out of {adata.obs.shape[0]} input cells")
                 print(f"Output embedding in {output_path}")
             return None
@@ -189,4 +207,4 @@ class EmbeddingExtractor:
 
 emb_extractor = EmbeddingExtractor("Geneformer")
 emb_extractor.tokenize()
-emb_extractor.extract_embeddings()
+# emb_extractor.extract_embeddings()

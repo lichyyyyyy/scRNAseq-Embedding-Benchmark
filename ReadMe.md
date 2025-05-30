@@ -25,4 +25,4 @@ source .venv/bin/deactivate
 | scGPT      | 512                 | https://github.com/bowang-lab/scGPT.git                                                   |
 | genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
 
-
+## User Manual
