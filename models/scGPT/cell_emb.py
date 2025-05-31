@@ -210,7 +210,7 @@ def embed_data(
         if s not in vocab:
             vocab.append_token(s)
     adata.var["id_in_vocab"] = [
-        vocab[gene] if gene in vocab else -1 for gene in adata.var[gene_col]
+        -1  if gene is np.nan or gene not in vocab else vocab[gene] for gene in adata.var[gene_col]
     ]
     gene_ids_in_vocab = np.array(adata.var["id_in_vocab"])
     adata = adata[:, adata.var["id_in_vocab"] >= 0]

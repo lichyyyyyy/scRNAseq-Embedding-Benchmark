@@ -1,13 +1,10 @@
+gene_info_table = 'data/expanded_gene_info_table.csv'
 raw_data_directory = 'example/data/raw'
-raw_data_filename = 'pbmc3k_raw.h5ad'
 preprocessed_data_directory = 'example/data/pre_processed'
-preprocessed_data_filename = 'pbmc3k_raw.h5ad'
-gene_info_table = 'data/gene_info_table.csv'
 
 preprocessor_configs = dict(
-    gene_key_col='gene_ids',
-    gene_key_type='ensembl_id',
-    data_file_type='Anndata',
+    gene_key_type='gene_symbol',  # The type of the gene index.
+    file_format='h5ad',  # The type of input files.
 )
 
 """
@@ -17,6 +14,7 @@ geneformer_configs = dict(
     # tokenizer
     tokenized_file_directory="./example/data/tokenized/Geneformer",
     tokenized_file_prefix='tokenized',
+    custom_cell_attr_names=['cell_type'],
     # embedding extractor
     load_model_dir="models/geneformer/model/",
     model_file_name="gf-20L-95M-i4096",
@@ -33,7 +31,8 @@ scgpt_configs = dict(
     model_file_name="model.pt",
     tokenized_file_dir='example/data/tokenized/scGPT',
     embedding_output_directory="example/embedding/scGPT/",
-    embedding_output_prefix="embedding",
+    embedding_output_prefix="embedding_",
+    custom_cell_attr_names=['cell_type'],
 )
 """
 genePT configs
@@ -45,7 +44,8 @@ genept_configs = dict(
     genept_s_embedding_output_directory="example/embedding/genePT_s/",
     genept_s_openai_model_name='text-embedding-ada-002',
     embedding_output_prefix="embedding_",
-    openai_api_key=''  # remember to set your open AI API key!
+    openai_api_key='',  # remember to set your open AI API key!
+    custom_cell_attr_names=['cell_type'],
 )
 
 """
