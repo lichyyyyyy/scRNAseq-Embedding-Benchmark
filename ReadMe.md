@@ -76,13 +76,15 @@ python embedding_extractor.py
 │         │                     ├── dataset_info.json
 │         │                     └── state.json
 │         └── embedding
+│             ├── genePT_s
+│             │         └── embedding_demo_cells_2k.csv
 │             ├── genePT_w
-│             │         └── embedding_pbmc3k_raw.csv
+│             │         └── embedding_demo_cells_2k.csv
 │             ├── geneformer
 │             │         └── embedding.csv
 │             └── scGPT
-│                 └── embeddingpbmc3k_raw.csv
-├── models
+│                 └── embedding_demo_cells_2k.csv
+├── models     <----------- Files downloaded from original repos.
 │         ├── genePT
 │         │         └── model
 │         │             └── GenePT_gene_embedding_ada_text.pickle
