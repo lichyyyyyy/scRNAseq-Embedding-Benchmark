@@ -15,9 +15,10 @@ git clone https://github.com/lichyyyyyy/scRNAseq-Embedding-Benchmark.git
 
 Python version == 3.10.
 
-To activate environment from `environment.txt` and please install the correct
+Activate environment from `environment.txt` by below commands. And please install the correct
 version of Torch and TorchText in this
-site: https://pytorch.org/get-started/locally.
+site: https://pytorch.org/get-started/locally (for example,
+`pip install torch==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121`).
 
 ```
 # Activate the virtual environment

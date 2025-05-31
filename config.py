@@ -31,7 +31,7 @@ scgpt_configs = dict(
     model_file_name="model.pt",
     tokenized_file_dir='example/data/tokenized/scGPT',
     embedding_output_directory="example/embedding/scGPT/",
-    embedding_output_prefix="embedding",
+    embedding_output_prefix="embedding_",
     custom_cell_attr_names=['cell_type'],
 )
 """
