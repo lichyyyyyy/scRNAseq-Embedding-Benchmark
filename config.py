@@ -14,12 +14,12 @@ geneformer_configs = dict(
     # tokenizer
     tokenized_file_directory="./example/data/tokenized/Geneformer",
     tokenized_file_prefix='tokenized',
-    custom_cell_attr_names=['cell_type'],
+    custom_cell_attr_names=['cell_type'],  # cell labels to keep
     # embedding extractor
     load_model_dir="models/geneformer/model/",
     model_file_name="gf-20L-95M-i4096",
-    embedding_output_directory="example/embedding/Geneformer",
-    embedding_output_prefix="embedding",
+    embedding_output_directory="example/embedding/Geneformer/",
+    embedding_output_filename="embedding",
     embedding_mode="cls"
 )
 
@@ -32,7 +32,7 @@ scgpt_configs = dict(
     tokenized_file_dir='example/data/tokenized/scGPT',
     embedding_output_directory="example/embedding/scGPT/",
     embedding_output_prefix="embedding_",
-    custom_cell_attr_names=['cell_type'],
+    custom_cell_attr_names=['cell_type'],  # cell labels to keep
 )
 """
 genePT configs
@@ -45,7 +45,7 @@ genept_configs = dict(
     genept_s_openai_model_name='text-embedding-ada-002',
     embedding_output_prefix="embedding_",
     openai_api_key='',  # remember to set your open AI API key!
-    custom_cell_attr_names=['cell_type'],
+    custom_cell_attr_names=['cell_type'],  # cell labels to keep
 )
 
 """
