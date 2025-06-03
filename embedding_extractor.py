@@ -4,18 +4,16 @@ import pickle
 import platform
 from pathlib import Path
 
-import Anndata
 import anndata as ad
 import numpy as np
 import openai
 import pandas as pd
 import scanpy as sc
 import torch
-from anndata
 from scipy.sparse import issparse
 
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
-from models.geneformer import EmbExtractor, TranscriptomeTokenizer
+from models.geneformer import TranscriptomeTokenizer
 from models.scGPT import embed_data
 
 """
@@ -25,15 +23,16 @@ Generate embeddings for given scRNAseq data.
 A directory of pre processed scRNAseq data in Anndata format.
 
 **Output data:**
-A directory of single cell transcriptomics embeddings in cvs.
+A directory of single cell transcriptomics embeddings in cvs or Anndata format.
+If in Anndata, the embedding is stored in `adata.obsm[X_{model_name}]`.
 
 
 
 **Usage:**
 ```
-    emb_extractor = EmbeddingExtractor("Geneformer")
-    emb_extractor.tokenize()
-    emb_extractor.extract_embeddings()
+emb_extractor = EmbeddingExtractor("scGPT", output_file_type='h5ad')
+emb_extractor.tokenize()
+emb_extractor.extract_embeddings()
 ```
 
 """
@@ -81,7 +80,7 @@ class EmbeddingExtractor:
         """
 
         def write_to_csv(dest_path: str, custom_cell_attr_names: list, embeddings: np.ndarray,
-                         embedding_attrs: np.ndarray):
+                         embedding_attrs: pd.DataFrame):
             output_df = pd.DataFrame()
             for attr_name in custom_cell_attr_names:
                 output_df = pd.concat([output_df, embedding_attrs[attr_name].to_frame()], axis=1)
@@ -105,15 +104,22 @@ class EmbeddingExtractor:
                 input_data_file=os.path.join(geneformer_configs['tokenized_file_directory'],
                                              geneformer_configs['tokenized_file_prefix'] + '.dataset'),
                 output_directory=geneformer_configs['embedding_output_directory'],
-                output_prefix=geneformer_configs['embedding_output_prefix'],
-                output_torch_embs=True)
+                output_prefix=geneformer_configs['embedding_output_filename'],
+                output_torch_embs=False)
             output_path = geneformer_configs['embedding_output_directory'] + geneformer_configs[
                 'embedding_output_filename'] + '.' + self.output_file_type
             if self.output_file_type == 'csv':
                 embedding.to_csv(output_path)
             elif self.output_file_type == 'h5ad':
-                adata = ad.AnnData()
-                adata.obsm["X_" + self.model_name] = embedding
+                obs = pd.DataFrame(
+                    embedding.loc[:, embedding.columns.isin(geneformer_configs['custom_cell_attr_names'])],
+                    index=embedding.index)
+                obsm = pd.DataFrame(
+                    embedding.loc[:, ~embedding.columns.isin(geneformer_configs['custom_cell_attr_names'])],
+                    index=embedding.index)
+                adata = ad.AnnData(obs=obs)
+                adata.obsm["X_" + self.model_name] = obsm.to_numpy()
+                adata.write(output_path)
 
             return print(f"Output embedding in {geneformer_configs['embedding_output_directory']}")
 
@@ -227,6 +233,6 @@ class EmbeddingExtractor:
         return print("Invalid model name")
 
 
-emb_extractor = EmbeddingExtractor("genePT-s")
+emb_extractor = EmbeddingExtractor("Geneformer", output_file_type='h5ad')
 emb_extractor.tokenize()
 emb_extractor.extract_embeddings()
