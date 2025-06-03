@@ -19,7 +19,7 @@ geneformer_configs = dict(
     load_model_dir="models/geneformer/model/",
     model_file_name="gf-20L-95M-i4096",
     embedding_output_directory="example/embedding/Geneformer",
-    embedding_output_prefix="embedding",
+    embedding_output_filename="embedding",
     embedding_mode="cls"
 )
 
