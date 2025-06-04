@@ -80,14 +80,23 @@ class EmbeddingExtractor:
         Extract transcriptomics embeddings for input scRNAseq data.
         """
 
-        def write_to_csv(dest_path: str, custom_cell_attr_names: list, embeddings: np.ndarray,
-                         embedding_attrs: pd.DataFrame):
-            output_df = pd.DataFrame()
+        def add_custom_cell_attrs(custom_cell_attr_names: list, embedding_attrs: pd.DataFrame,
+                                  embeddings: pd.DataFrame):
             for attr_name in custom_cell_attr_names:
-                output_df = pd.concat([output_df, embedding_attrs[attr_name].to_frame()], axis=1)
-            output_df = pd.concat([output_df, pd.DataFrame(embeddings, index=output_df.index)], axis=1)
-            output_df.to_csv(dest_path, index=False)
-            print(f"Output embedding in {dest_path}")
+                embeddings = pd.concat([embeddings, embedding_attrs[attr_name].to_frame()], axis=1)
+            embeddings = pd.concat([embeddings, pd.DataFrame(embeddings, index=embeddings.index)], axis=1)
+            return embeddings
+
+        def generate_output_anndata(custom_cell_attr_names: list, embeddings: pd.DataFrame):
+            obs = pd.DataFrame(
+                embeddings.loc[:, embeddings.columns.isin(custom_cell_attr_names)],
+                index=embeddings.index)
+            obsm = pd.DataFrame(
+                embeddings.loc[:, ~embeddings.columns.isin(custom_cell_attr_names)],
+                index=embeddings.index)
+            adata = ad.AnnData(obs=obs)
+            adata.obsm["X_" + self.model_name] = obsm.to_numpy()
+            return adata
 
         if self.model_name == "Geneformer":
             print("Extracting Geneformer embeddings")
@@ -127,6 +136,7 @@ class EmbeddingExtractor:
         elif self.model_name == "scGPT":
             print("Extracting scGPT embeddings")
             os.makedirs(scgpt_configs['embedding_output_directory'], exist_ok=True)
+            embeddings = pd.DataFrame()
             for file_path in glob.glob(preprocessed_data_directory + f"/*.h5ad"):
                 print(f"Embedding {file_path}")
                 embed_adata = embed_data(
@@ -138,14 +148,17 @@ class EmbeddingExtractor:
                     obs_to_save=None,
                     use_fast_transformer=(platform.system() == "Linux"),
                     return_new_adata=False)
-                output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
-                    'embedding_output_prefix'] + Path(
-                    file_path).stem + '.' + self.output_file_type
-                if self.output_file_type == 'csv':
-                    write_to_csv(output_path, scgpt_configs['custom_cell_attr_names'], embed_adata.obsm['X_scGPT'],
-                                 embed_adata.obs)
-                elif self.output_file_type == 'h5ad':
-                    embed_adata.write(output_path)
+                file_embedding = add_custom_cell_attrs(custom_cell_attr_names=scgpt_configs['custom_cell_attr_names'],
+                                                       embedding_attrs=embed_adata.obs,
+                                                       embeddings=pd.DataFrame(embed_adata.obsm['X_scGPT']))
+                embeddings = pd.concat([embeddings, file_embedding], axis=0)
+
+            output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
+                'embedding_output_filename'] + '.' + self.output_file_type
+            if self.output_file_type == 'csv':
+                embeddings.to_csv(output_path)
+            elif self.output_file_type == 'h5ad':
+                generate_output_anndata(scgpt_configs['custom_cell_attr_names'], embeddings).write(output_path)
             return print(f"Output embedding in {scgpt_configs['embedding_output_directory']}")
 
         elif self.model_name == "genePT-w":
@@ -153,12 +166,13 @@ class EmbeddingExtractor:
             with open(os.path.join(genept_configs['load_model_dir'], genept_configs['embedding_file_name']),
                       'rb') as fp:
                 genept_embedding_data = pickle.load(fp)
+            EMBED_DIM = 1536  # embedding dim from GPT-3.5
+            embeddings = pd.DataFrame()
             for file_path in glob.glob(preprocessed_data_directory + f"/*.h5ad"):
                 print(f"Embedding {file_path}")
                 adata = sc.read_h5ad(file_path)
                 gene_names = list(adata.var['gene_symbol'])
                 count_missing = 0
-                EMBED_DIM = 1536  # embedding dim from GPT-3.5
                 lookup_embed = np.zeros(shape=(len(gene_names), EMBED_DIM))
                 for i, gene in enumerate(gene_names):
                     if gene in genept_embedding_data:
@@ -167,19 +181,18 @@ class EmbeddingExtractor:
                         count_missing += 1
                 adata_torch = torch.tensor(adata.X.toarray() if issparse(adata.X) else adata.X, dtype=torch.float32)
                 lookup_embed_torch = torch.tensor(lookup_embed, dtype=torch.float32)
-                genePT_w_emebed = torch.divide(torch.matmul(adata_torch, lookup_embed_torch), len(gene_names)).numpy()
-                output_path = genept_configs['genept_w_embedding_output_directory'] + genept_configs[
-                    'embedding_output_prefix'] + Path(
-                    file_path).stem + '.' + self.output_file_type
-                if self.output_file_type == 'csv':
-                    write_to_csv(output_path, scgpt_configs['custom_cell_attr_names'], genePT_w_emebed,
-                                 adata.obs)
-                elif self.output_file_type == 'h5ad':
-                    adata.obsm['X_' + self.model_name] = genePT_w_emebed
-                    adata.write(output_path)
-                print(f"Unable to match {count_missing} out of {len(gene_names)} genes in the GenePT-w embedding")
-                print(f"Output embedding in {output_path}")
-            return None
+                file_embeddings = torch.divide(torch.matmul(adata_torch, lookup_embed_torch), len(gene_names)).numpy()
+                embeddings = pd.concat([embeddings, pd.DataFrame(file_embeddings)], axis=0)
+                print(f"Unable to match {count_missing} out of {len(gene_names)} genes in {file_path}")
+
+            output_path = genept_configs['genept_w_embedding_output_directory'] + genept_configs[
+                'embedding_output_filename'] + '.' + self.output_file_type
+            if self.output_file_type == 'csv':
+                embeddings.to_csv(output_path)
+            elif self.output_file_type == 'h5ad':
+                generate_output_anndata(genept_configs['custom_cell_attr_names'], embeddings).write(output_path)
+
+            return print(f"Output embedding in {output_path}")
 
         elif self.model_name == "genePT-s":
             print("Extracting gene PT-s embeddings")
@@ -203,8 +216,7 @@ class EmbeddingExtractor:
                 return (get_test_array_seq)
 
             def get_gpt_embedding(text, model=genept_configs['genept_s_openai_model_name']):
-                text = text.replace("\n", " ")
-                emb = []
+                text = text.replace("\n", " ")                emb = []
                 for attempt in range(3):
                     try:
                         emb = openai.Embedding.create(input=[text], model=model,
@@ -216,6 +228,7 @@ class EmbeddingExtractor:
 
                 return np.array(emb)
 
+            embeddings = pd.DataFrame()
             openai.api_key = genept_configs['openai_api_key']
             os.makedirs(genept_configs['genept_s_embedding_output_directory'], exist_ok=True)
             for file_path in glob.glob(raw_data_directory + f"/*.h5ad"):
@@ -225,21 +238,21 @@ class EmbeddingExtractor:
                                                       np.array(adata.var.index),
                                                       prompt_prefix='A cell with genes ranked by expression: ',
                                                       trunc_index=None)
-                embeddings = []
+                file_embeddings = []
                 for i, x in enumerate(ranked_cells_data):
-                    embeddings.append(get_gpt_embedding(x))
+                    file_embeddings.append(get_gpt_embedding(x))
                     if i % 100 == 0:
                         print(f"Processing {i} out of {adata.obs.shape[0]} cells...")
-                output_path = genept_configs['genept_s_embedding_output_directory'] + genept_configs[
-                    'embedding_output_prefix'] + Path(
-                    file_path).stem + '.' + self.output_file_type
-                if self.output_file_type == 'csv':
-                    write_to_csv(output_path, genept_configs['custom_cell_attr_names'], np.array(embeddings), adata.obs)
-                elif self.output_file_type == 'h5ad':
-                    adata.obsm['X_' + self.model_name] = embeddings
-                    adata.write(output_path)
-                print(f"Output embedding in {output_path}")
-            return None
+                embeddings = pd.concat([embeddings, pd.DataFrame(file_embeddings)], axis=0)
+
+            output_path = genept_configs['genept_s_embedding_output_directory'] + genept_configs[
+                'embedding_output_filename'] + '.' + self.output_file_type
+            if self.output_file_type == 'csv':
+                embeddings.to_csv(output_path)
+            elif self.output_file_type == 'h5ad':
+                generate_output_anndata(genept_configs['custom_cell_attr_names'], embeddings).write(output_path)
+
+            return print(f"Output embedding in {output_path}")
 
         return print("Invalid model name")
 
