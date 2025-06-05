@@ -130,10 +130,11 @@ python embedding_extractor.py
 
 ```
 
-## Included Models
+## Included Models & References
 
-| Model Name | Embedding Dimension | Repo URL                                                                                  |
-|------------|---------------------|-------------------------------------------------------------------------------------------|
-| Geneformer | 895                 | https://huggingface.co/ctheodoris/Geneformer                                              |
-| scGPT      | 512                 | https://github.com/bowang-lab/scGPT.git                                                   |
-| genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
+| Name       | Directory         | Embedding Dimension | Repo URL                                                                                  |
+|------------|-------------------|---------------------|-------------------------------------------------------------------------------------------|
+| Geneformer | models/geneformer | 895                 | https://huggingface.co/ctheodoris/Geneformer                                              |
+| scGPT      | models/scGPT      | 512                 | https://github.com/bowang-lab/scGPT.git                                                   |
+| genePT     | models/genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
+| zero shot  | eval/zero_shot    | -                   | https://github.com/microsoft/zero-shot-scfoundation.git                                   |
