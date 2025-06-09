@@ -2,6 +2,7 @@ import glob
 import os
 import pickle
 import platform
+import time
 from pathlib import Path
 
 import anndata as ad
@@ -13,7 +14,7 @@ import torch
 from scipy.sparse import issparse
 
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
-from models.geneformer import TranscriptomeTokenizer
+from models.geneformer import TranscriptomeTokenizer, EmbExtractor
 from models.scGPT import embed_data
 
 """
@@ -145,7 +146,7 @@ class EmbeddingExtractor:
                                  embed_adata.obs)
                 elif self.output_file_type == 'h5ad':
                     embed_adata.write(output_path)
-            return None
+            return print(f"Output embedding in {scgpt_configs['embedding_output_directory']}")
 
         elif self.model_name == "genePT-w":
             print("Extracting gene PT-W embeddings")
@@ -203,7 +204,17 @@ class EmbeddingExtractor:
 
             def get_gpt_embedding(text, model=genept_configs['genept_s_openai_model_name']):
                 text = text.replace("\n", " ")
-                return np.array(openai.Embedding.create(input=[text], model=model)['data'][0]['embedding'])
+                emb = []
+                for attempt in range(3):
+                    try:
+                        emb = openai.Embedding.create(input=[text], model=model,
+                                                            request_timeout=600)['data'][0]['embedding']
+                        break
+                    except Exception as e:
+                        print(f"Failed to fetch embeddings from OpenAi. Attempt {attempt + 1}: {e}")
+                        time.sleep(2 ** attempt)
+
+                return np.array(emb)
 
             openai.api_key = genept_configs['openai_api_key']
             os.makedirs(genept_configs['genept_s_embedding_output_directory'], exist_ok=True)

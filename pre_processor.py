@@ -3,7 +3,9 @@ Data pre-processor.
 
 **Input data:**
 Sc RNA seq in Anndata format (.h5ad).
-| *Required row (gene) attribute:* "gene_ids", type: {"gene_symbol", "ensembl_id", "entrez_id", "refseq_id"}
+| *Required row (gene) attribute:* gene ID indexed in `vars`, supporting naming system: {"gene_symbol", "ensembl_id",
+ "entrez_id", "refseq_id"}.
+Note： there is no need to pre-process, filter, or log-transform the input in advance.
 
 **Output data:**
 Sc RNA seq in Anndata format (.h5ad).
@@ -19,6 +21,7 @@ PreProcessor.pre_process()
 
 """
 import os
+from pathlib import Path
 
 import pandas as pd
 import scanpy as sc
@@ -45,7 +48,7 @@ class PreProcessor:
 
         os.makedirs(preprocessed_data_directory, exist_ok=True)
 
-        for file_path in raw_data_directory.glob(f"*.{file_format}"):
+        for file_path in Path(raw_data_directory).glob(f"*.{file_format}"):
             print(f"Pre-processing {file_path}")
             adata = sc.read_h5ad(file_path)
             gene_info_table = pd.read_csv(config.gene_info_table)
@@ -60,7 +63,7 @@ class PreProcessor:
             print(f"Pre-process completed: {file_path}")
             adata.write_h5ad(file_path, compression="gzip")
 
-        return print("Invalid model name")
+        return None
 
 
 PreProcessor.pre_process()
