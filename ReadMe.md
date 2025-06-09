@@ -8,17 +8,16 @@
 # Initialize Git LFS (once per machine):
 git lfs install
 
+# Run either one of the below commands to clone the repo:
 git clone https://github.com/lichyyyyyy/scRNAseq-Embedding-Benchmark.git
+git clone git@github.com:lichyyyyyy/scRNAseq-Foundation-Model-Benchmark.git
 ```
 
 ### Step 1. Activate python environment
 
 Python version == 3.10.
 
-Activate environment from `environment.txt` by below commands. And please install the correct
-version of Torch and TorchText in this
-site: https://pytorch.org/get-started/locally (for example,
-`pip install torch==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121`).
+Activate environment from `environment.txt` by below commands.
 
 ```
 # Activate the virtual environment
@@ -27,6 +26,9 @@ pip install -r requirements.txt
 
 # Deactivate the virtual environment
 source .venv/bin/deactivate
+
+# Download the compatible version of Torch from https://pytorch.org/get-started/locally. For example:
+pip install torch==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121
 ```
 
 ### Step 2. Download pre-computed models
