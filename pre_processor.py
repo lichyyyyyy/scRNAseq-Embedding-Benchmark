@@ -61,7 +61,7 @@ class PreProcessor:
             print(f"Pre-process completed: {file_path}")
             adata.write_h5ad(file_path, compression="gzip")
 
-        return print("Invalid model name")
+        return None
 
 
 PreProcessor.pre_process()
