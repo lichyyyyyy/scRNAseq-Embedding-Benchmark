@@ -3,7 +3,9 @@ Data pre-processor.
 
 **Input data:**
 Sc RNA seq in Anndata format (.h5ad).
-| *Required row (gene) attribute:* "gene_ids", type: {"gene_symbol", "ensembl_id", "entrez_id", "refseq_id"}
+| *Required row (gene) attribute:* gene ID indexed in `vars`, supporting naming system: {"gene_symbol", "ensembl_id",
+ "entrez_id", "refseq_id"}.
+Note： there is no need to pre-process, filter, or log-transform the input in advance.
 
 **Output data:**
 Sc RNA seq in Anndata format (.h5ad).

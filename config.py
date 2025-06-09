@@ -11,7 +11,7 @@ preprocessed_data_directory = 'example/data/pre_processed'
 Pre processor configs
 """
 preprocessor_configs = dict(
-    # Type of gene naming system.
+    # Type of gene naming system in the anndata var index.
     gene_key_type='gene_symbol',
     # The input file format. Currently only Anndata is supported.
     file_format='h5ad',
