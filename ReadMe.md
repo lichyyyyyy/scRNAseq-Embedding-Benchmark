@@ -130,7 +130,13 @@ python embedding_extractor.py
 
 ```
 
-## Included Models & References
+## Evaluation Tasks
+
+| Category  | Tasks                | Metrics                                                                                                                            |
+|-----------|----------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Zero-shot | cell type clustering | UMAP, [benchmark metrics](https://github.com/theislab/scib?tab=readme-ov-file#metrics)(NMI, ARI, ASW, graph connectivity, avg bio) |
+
+## References
 
 | Name       | Directory         | Embedding Dimension | Repo URL                                                                                  |
 |------------|-------------------|---------------------|-------------------------------------------------------------------------------------------|
