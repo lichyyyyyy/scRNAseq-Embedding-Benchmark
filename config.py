@@ -15,6 +15,8 @@ preprocessor_configs = dict(
     gene_key_type='gene_symbol',
     # The input file format. Currently only Anndata is supported.
     file_format='h5ad',
+    # Whether to keep batch key.
+    keep_batch_key=False,
 )
 
 """

@@ -15,7 +15,7 @@ git clone https://github.com/lichyyyyyy/scRNAseq-Embedding-Benchmark.git
 
 ### Step 1. Activate python environment
 
-Python version == 3.10.
+Python version == 3.10. GCU is required.
 
 Activate environment from `environment.txt` by below commands.
 

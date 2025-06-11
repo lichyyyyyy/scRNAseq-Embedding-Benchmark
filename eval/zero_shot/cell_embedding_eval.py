@@ -12,7 +12,7 @@ Example usage:
                               embedding_file_path='example/embedding/Geneformer/embedding.h5ad',
                               output_dir='example/eval/Geneformer/',
                               label_key=['cell_type'],
-                              batch_key=None)
+                              batch_key=['batch_key'],])
     eval.evaluate()
     eval.visualize()
 ```

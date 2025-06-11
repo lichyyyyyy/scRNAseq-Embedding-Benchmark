@@ -36,19 +36,21 @@ class PreProcessor:
     def pre_process(gene_key_type=config.preprocessor_configs['gene_key_type'],
                     file_format=config.preprocessor_configs['file_format'],
                     raw_data_directory: str = config.raw_data_directory,
-                    preprocessed_data_directory: str = config.preprocessed_data_directory):
+                    preprocessed_data_directory: str = config.preprocessed_data_directory,
+                    keep_batch_key: bool = config.preprocessor_configs['keep_batch_key'], ):
         """
         Pre-process the Anndata file.
         :param gene_key_type: {"gene_symbol", "ensembl_id", "entrez_id", "refseq_id"}
             The type of the gene index.
         :param file_format: {"h5ad"}
+        :param keep_batch_key: Whether to keep the batch key or not.
         """
         assert file_format in {"h5ad"}, "Unsupported file type"
         assert gene_key_type in {"gene_symbol", "ensembl_id", "entrez_id", "refseq_id"}, "Unsupported gene key system"
 
         os.makedirs(preprocessed_data_directory, exist_ok=True)
 
-        for file_path in Path(raw_data_directory.glob(f"*.{file_format}")):
+        for file_path in Path(raw_data_directory).glob(f"*.{file_format}"):
             print(f"Pre-processing {file_path}")
             adata = sc.read_h5ad(file_path)
             gene_info_table = pd.read_csv(config.gene_info_table)
@@ -56,7 +58,10 @@ class PreProcessor:
 
             adata.var = pd.merge(adata.var, gene_info_table, how='left', left_on=adata.var.index,
                                  right_on=gene_info_table[gene_key_type])
-            adata.var = adata.var[['gene_symbol', 'ensembl_id', 'gene_type']]
+            if keep_batch_key:
+                if 'batch_key' in adata.var.columns:
+                    adata.var['original_batch_key'] = adata.var.batch_key
+                adata.var['batch_key'] = [file_path.stem]
 
             # Add `n_counts` for each cell.
             adata.obs['n_counts'] = adata.X.sum(axis=1)
