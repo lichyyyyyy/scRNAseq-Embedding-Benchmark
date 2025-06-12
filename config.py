@@ -11,12 +11,14 @@ preprocessed_data_directory = 'example/data/pre_processed'
 Pre processor configs
 """
 preprocessor_configs = dict(
+    # The column name of gene ID in `adata.var`.
+    gene_id_col_name = 'ensembl_id',
     # Type of gene naming system in the anndata var index.
-    gene_key_type='gene_symbol',
+    gene_key_type='ensembl_id',
     # The input file format. Currently only Anndata is supported.
     file_format='h5ad',
     # Whether to keep batch key.
-    keep_batch_key=False,
+    keep_batch_key=True,
 )
 
 """

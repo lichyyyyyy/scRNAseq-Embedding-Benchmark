@@ -3,7 +3,7 @@ import os
 import pickle
 import platform
 import time
-from pathlib import Path
+import warnings
 
 import anndata as ad
 import numpy as np
@@ -16,6 +16,8 @@ from scipy.sparse import issparse
 from config import geneformer_configs, preprocessed_data_directory, raw_data_directory, genept_configs, scgpt_configs
 from models.geneformer import TranscriptomeTokenizer, EmbExtractor
 from models.scGPT import embed_data
+
+warnings.filterwarnings("ignore")
 
 """
 Generate embeddings for given scRNAseq data.
@@ -65,15 +67,15 @@ class EmbeddingExtractor:
             tk = TranscriptomeTokenizer(
                 custom_attr_name_dict=custom_attr_name_dict,
                 special_token=True)
-            return tk.tokenize_data(
+            tk.tokenize_data(
                 data_directory=preprocessed_data_directory,
                 output_directory=geneformer_configs['tokenized_file_directory'],
                 output_prefix=geneformer_configs['tokenized_file_prefix'], file_format="h5ad")
 
         elif self.model_name in {"scGPT", "genePT-w", "genePT-s"}:
-            return print("Tokenizer skipped")
+            return print(f"Tokenizer skipped for {self.model_name}")
 
-        return print("Invalid model name")
+        return print(f'Tokenization completed for {self.model_name}.')
 
     def extract_embeddings(self):
         """
@@ -81,11 +83,11 @@ class EmbeddingExtractor:
         """
 
         def add_custom_cell_attrs(custom_cell_attr_names: list, embedding_attrs: pd.DataFrame,
-                                  embeddings: pd.DataFrame):
+                                  cell_emb: pd.DataFrame):
             for attr_name in custom_cell_attr_names:
-                embeddings = pd.concat([embeddings, embedding_attrs[attr_name].to_frame()], axis=1)
-            embeddings = pd.concat([embeddings, pd.DataFrame(embeddings, index=embeddings.index)], axis=1)
-            return embeddings
+                cell_emb = pd.concat([embedding_attrs[attr_name].to_frame().set_index(cell_emb.index), cell_emb],
+                                     axis=1)
+            return cell_emb
 
         def generate_output_anndata(custom_cell_attr_names: list, embeddings: pd.DataFrame):
             obs = pd.DataFrame(
@@ -131,7 +133,7 @@ class EmbeddingExtractor:
                 adata.obsm["X_" + self.model_name] = obsm.to_numpy()
                 adata.write(output_path)
 
-            return print(f"Output embedding in {geneformer_configs['embedding_output_directory']}")
+            return print(f"Output embedding in {geneformer_configs['embedding_output_directory']}\n")
 
         elif self.model_name == "scGPT":
             print("Extracting scGPT embeddings")
@@ -150,7 +152,7 @@ class EmbeddingExtractor:
                     return_new_adata=False)
                 file_embedding = add_custom_cell_attrs(custom_cell_attr_names=scgpt_configs['custom_cell_attr_names'],
                                                        embedding_attrs=embed_adata.obs,
-                                                       embeddings=pd.DataFrame(embed_adata.obsm['X_scGPT']))
+                                                       cell_emb=pd.DataFrame(embed_adata.obsm['X_scGPT']))
                 embeddings = pd.concat([embeddings, file_embedding], axis=0)
 
             output_path = scgpt_configs['embedding_output_directory'] + scgpt_configs[
@@ -162,7 +164,7 @@ class EmbeddingExtractor:
             return print(f"Output embedding in {scgpt_configs['embedding_output_directory']}")
 
         elif self.model_name == "genePT-w":
-            print("Extracting gene PT-W embeddings")
+            print("Extracting genePT-W embeddings")
             with open(os.path.join(genept_configs['load_model_dir'], genept_configs['embedding_file_name']),
                       'rb') as fp:
                 genept_embedding_data = pickle.load(fp)
@@ -182,7 +184,10 @@ class EmbeddingExtractor:
                 adata_torch = torch.tensor(adata.X.toarray() if issparse(adata.X) else adata.X, dtype=torch.float32)
                 lookup_embed_torch = torch.tensor(lookup_embed, dtype=torch.float32)
                 file_embeddings = torch.divide(torch.matmul(adata_torch, lookup_embed_torch), len(gene_names)).numpy()
-                embeddings = pd.concat([embeddings, pd.DataFrame(file_embeddings)], axis=0)
+                file_embeddings = add_custom_cell_attrs(custom_cell_attr_names=genept_configs['custom_cell_attr_names'],
+                                                        embedding_attrs=adata.obs,
+                                                        cell_emb=pd.DataFrame(file_embeddings))
+                embeddings = pd.concat([embeddings, file_embeddings], axis=0)
                 print(f"Unable to match {count_missing} out of {len(gene_names)} genes in {file_path}")
 
             output_path = genept_configs['genept_w_embedding_output_directory'] + genept_configs[
@@ -192,10 +197,10 @@ class EmbeddingExtractor:
             elif self.output_file_type == 'h5ad':
                 generate_output_anndata(genept_configs['custom_cell_attr_names'], embeddings).write(output_path)
 
-            return print(f"Output embedding in {output_path}")
+            return print(f"Output embedding in {output_path}\n")
 
         elif self.model_name == "genePT-s":
-            print("Extracting gene PT-s embeddings")
+            print("Extracting genePT-s embeddings")
 
             def get_seq_embed_gpt(X, gene_names, prompt_prefix="", trunc_index=None):
                 n_genes = X.shape[1]
@@ -213,14 +218,15 @@ class EmbeddingExtractor:
                     else:
                         get_test_array.append(np.array(gene_names[filtered_genes]))
                 get_test_array_seq = [prompt_prefix + ' '.join(x) for x in get_test_array]
-                return (get_test_array_seq)
+                return get_test_array_seq
 
             def get_gpt_embedding(text, model=genept_configs['genept_s_openai_model_name']):
-                text = text.replace("\n", " ")                emb = []
+                text = text.replace("\n", " ")
+                emb = []
                 for attempt in range(3):
                     try:
                         emb = openai.Embedding.create(input=[text], model=model,
-                                                            request_timeout=600)['data'][0]['embedding']
+                                                      request_timeout=600)['data'][0]['embedding']
                         break
                     except Exception as e:
                         print(f"Failed to fetch embeddings from OpenAi. Attempt {attempt + 1}: {e}")
@@ -243,7 +249,10 @@ class EmbeddingExtractor:
                     file_embeddings.append(get_gpt_embedding(x))
                     if i % 100 == 0:
                         print(f"Processing {i} out of {adata.obs.shape[0]} cells...")
-                embeddings = pd.concat([embeddings, pd.DataFrame(file_embeddings)], axis=0)
+                file_embeddings = add_custom_cell_attrs(custom_cell_attr_names=genept_configs['custom_cell_attr_names'],
+                                                        embedding_attrs=adata.obs,
+                                                        cell_emb=pd.DataFrame(file_embeddings))
+                embeddings = pd.concat([embeddings, file_embeddings], axis=0)
 
             output_path = genept_configs['genept_s_embedding_output_directory'] + genept_configs[
                 'embedding_output_filename'] + '.' + self.output_file_type
@@ -252,11 +261,12 @@ class EmbeddingExtractor:
             elif self.output_file_type == 'h5ad':
                 generate_output_anndata(genept_configs['custom_cell_attr_names'], embeddings).write(output_path)
 
-            return print(f"Output embedding in {output_path}")
+            return print(f"Output embedding in {output_path}\n")
 
         return print("Invalid model name")
 
 
-emb_extractor = EmbeddingExtractor("Geneformer", output_file_type='h5ad')
-emb_extractor.tokenize()
-emb_extractor.extract_embeddings()
+for model in {"Geneformer", "scGPT", "genePT-w"}:
+    emb_extractor = EmbeddingExtractor(model, output_file_type='h5ad')
+    emb_extractor.tokenize()
+    emb_extractor.extract_embeddings()
