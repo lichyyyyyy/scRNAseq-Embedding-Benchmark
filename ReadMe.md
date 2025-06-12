@@ -15,7 +15,7 @@ git clone https://github.com/lichyyyyyy/scRNAseq-Embedding-Benchmark.git
 
 ### Step 1. Activate python environment
 
-Python version == 3.10.
+Python version == 3.10. GCU is required.
 
 Activate environment from `environment.txt` by below commands.
 
@@ -130,10 +130,17 @@ python embedding_extractor.py
 
 ```
 
-## Included Models
+## Evaluation Tasks
 
-| Model Name | Embedding Dimension | Repo URL                                                                                  |
-|------------|---------------------|-------------------------------------------------------------------------------------------|
-| Geneformer | 895                 | https://huggingface.co/ctheodoris/Geneformer                                              |
-| scGPT      | 512                 | https://github.com/bowang-lab/scGPT.git                                                   |
-| genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
+| Category  | Tasks                | Metrics                                                                                                                            |
+|-----------|----------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Zero-shot | cell type clustering | UMAP, [benchmark metrics](https://github.com/theislab/scib?tab=readme-ov-file#metrics)(NMI, ARI, ASW, graph connectivity, avg bio) |
+
+## References
+
+| Name       | Directory         | Embedding Dimension | Repo URL                                                                                  |
+|------------|-------------------|---------------------|-------------------------------------------------------------------------------------------|
+| Geneformer | models/geneformer | 895                 | https://huggingface.co/ctheodoris/Geneformer                                              |
+| scGPT      | models/scGPT      | 512                 | https://github.com/bowang-lab/scGPT.git                                                   |
+| genePT     | models/genePT     | 1536                | https://github.com/yiqunchen/GenePT.git  (genePT-w pre-computed gene embedding num 93800) |
+| zero shot  | eval/zero_shot    | -                   | https://github.com/microsoft/zero-shot-scfoundation.git                                   |

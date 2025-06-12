@@ -11,10 +11,14 @@ preprocessed_data_directory = 'example/data/pre_processed'
 Pre processor configs
 """
 preprocessor_configs = dict(
+    # The column name of gene ID in `adata.var`.
+    gene_id_col_name = 'ensembl_id',
     # Type of gene naming system in the anndata var index.
-    gene_key_type='gene_symbol',
+    gene_key_type='ensembl_id',
     # The input file format. Currently only Anndata is supported.
     file_format='h5ad',
+    # Whether to keep batch key.
+    keep_batch_key=True,
 )
 
 """
@@ -49,8 +53,8 @@ scgpt_configs = dict(
     model_file_name="model.pt",
     # The output embedding file directory.
     embedding_output_directory="example/embedding/scGPT/",
-    # The output embedding file name prefix.
-    embedding_output_prefix="embedding_",
+    # The output embedding file name.
+    embedding_output_filename="embedding",
     # List of cell attribute labels to keep.
     custom_cell_attr_names=['cell_type'],
 )
@@ -68,8 +72,8 @@ genept_configs = dict(
     genept_s_embedding_output_directory="example/embedding/genePT_s/",
     # The used openai model name.
     genept_s_openai_model_name='text-embedding-ada-002',
-    # The output embedding file name prefix.
-    embedding_output_prefix="embedding_",
+    # The output embedding file name.
+    embedding_output_filename="embedding",
     # OpenAI api key.
     openai_api_key='',  # remember to set your open AI API key!
     # List of cell attribute labels to keep.

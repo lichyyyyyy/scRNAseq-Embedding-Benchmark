@@ -18,7 +18,7 @@ try:
 except ImportError:
     import warnings
 
-    warnings.warn("flash_attn is not installed")
+    # warnings.warn("flash_attn is not installed")
     flash_attn_available = False
 
 from .dsbn import DomainSpecificBatchNorm1d
