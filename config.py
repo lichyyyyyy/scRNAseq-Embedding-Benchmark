@@ -11,14 +11,18 @@ preprocessed_data_directory = 'example/data/pre_processed'
 Pre processor configs
 """
 preprocessor_configs = dict(
-    # The column name of gene ID in `adata.var`.
-    gene_id_col_name = 'ensembl_id',
-    # Type of gene naming system in the anndata var index.
-    gene_key_type='ensembl_id',
+    # The column name of gene ID in `adata.var`. If the gene ID is the index, input `index`.
+    gene_id_col_name='ensembl_id',
+    # The type of gene naming system in the gene ID: {"gene_symbol", "ensembl_id", "entrez_id", "refseq_id"}.
+    gene_id_type='ensembl_id',
     # The input file format. Currently only Anndata is supported.
     file_format='h5ad',
-    # Whether to keep batch key.
+    # Whether to keep batch key. If true, the input file directory name will be used as the batch key and stored under
+    # `adata.obs.batch_key`.
     keep_batch_key=True,
+    # Map of cell attribute labels in `obs` to keep. Key is the name in original file, value is the name in
+    # pre-processed file.
+    custom_cell_attr_names={'cell_type': 'cell_type'},
 )
 
 """
@@ -30,7 +34,7 @@ geneformer_configs = dict(
     # The output tokenized filename prefix.
     tokenized_file_prefix='tokenized',
     # List of cell attribute labels to keep.
-    custom_cell_attr_names=['cell_type'],
+    custom_cell_attr_names=['cell_type', 'batch_key'],
     # Directory of the Geneformer pre-trained model.
     load_model_dir="models/geneformer/model/",
     # Name of the Geneformer pre-trained model.
@@ -40,7 +44,7 @@ geneformer_configs = dict(
     # The output embedding file directory.
     embedding_output_directory="example/embedding/Geneformer/",
     # The output embedding file name.
-    embedding_output_filename="embedding"
+    embedding_output_filename="cell_embeddings"
 )
 
 """
@@ -54,9 +58,9 @@ scgpt_configs = dict(
     # The output embedding file directory.
     embedding_output_directory="example/embedding/scGPT/",
     # The output embedding file name.
-    embedding_output_filename="embedding",
+    embedding_output_filename="cell_embeddings",
     # List of cell attribute labels to keep.
-    custom_cell_attr_names=['cell_type'],
+    custom_cell_attr_names=['cell_type', 'batch_key'],
 )
 """
 genePT configs
@@ -73,11 +77,11 @@ genept_configs = dict(
     # The used openai model name.
     genept_s_openai_model_name='text-embedding-ada-002',
     # The output embedding file name.
-    embedding_output_filename="embedding",
+    embedding_output_filename="cell_embeddings",
     # OpenAI api key.
     openai_api_key='',  # remember to set your open AI API key!
     # List of cell attribute labels to keep.
-    custom_cell_attr_names=['cell_type'],
+    custom_cell_attr_names=['cell_type', 'batch_key'],
 )
 
 """

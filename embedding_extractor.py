@@ -72,8 +72,10 @@ class EmbeddingExtractor:
                 output_directory=geneformer_configs['tokenized_file_directory'],
                 output_prefix=geneformer_configs['tokenized_file_prefix'], file_format="h5ad")
 
-        elif self.model_name in {"scGPT", "genePT-w", "genePT-s"}:
-            return print(f"Tokenizer skipped for {self.model_name}")
+        elif self.model_name in {"scGPT"}:
+            return None
+        elif self.model_name == {"genePT-w", "genePT-s"}:
+            return print(f'Skip tokenization for {self.model_name}.')
 
         return print(f'Tokenization completed for {self.model_name}.')
 
@@ -102,6 +104,7 @@ class EmbeddingExtractor:
 
         if self.model_name == "Geneformer":
             print("Extracting Geneformer embeddings")
+            os.makedirs(geneformer_configs['embedding_output_directory'], exist_ok=True)
             extractor = EmbExtractor(model_type="Pretrained",
                                      num_classes=0,  # 0 for the pre-trained model
                                      emb_mode=geneformer_configs['embedding_mode'],  # {"cls", "cell", "gene"}
@@ -192,6 +195,7 @@ class EmbeddingExtractor:
 
             output_path = genept_configs['genept_w_embedding_output_directory'] + genept_configs[
                 'embedding_output_filename'] + '.' + self.output_file_type
+            os.makedirs(genept_configs['genept_w_embedding_output_directory'], exist_ok=True)
             if self.output_file_type == 'csv':
                 embeddings.to_csv(output_path)
             elif self.output_file_type == 'h5ad':

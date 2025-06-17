@@ -8,15 +8,18 @@ Generate benchmark metrics and visualize UMAP figures for given cell embeddings.
 
 Example usage:
 ```
-    eval = CellEmbeddingsEval(model_name='Geneformer',
-                              embedding_file_path='example/embedding/Geneformer/embedding.h5ad',
-                              output_dir='example/eval/Geneformer/',
-                              label_key=['cell_type'],
-                              batch_key=['batch_key'],])
-    eval.evaluate()
-    eval.visualize()
+eval = CellEmbeddingsEval(model_name='scGPT',
+                          embedding_file_path='D:\Beaver\code\scRNAseq-Embedding-Benchmark\example1\embedding\scGPT\cell_embeddings.h5ad',
+                          output_dir='example1/eval/scGPT/',
+                          label_key=['CellType'],
+                          batch_key='batch_key')
+eval.evaluate()
+eval.visualize(plot_type='wide')
 ```
 """
+
+import warnings
+warnings.filterwarnings("ignore")
 
 import os
 from typing import List, Optional, Tuple, Dict
@@ -200,8 +203,7 @@ class CellEmbeddingsEval():
         for i, label in enumerate(label_cols):
             labels[label] = self.adata.obs[label].unique()
             if len(labels[label]) > 10:
-                print(f"More than 10 labels for {label}."
-                      f"The plots might be hard to read.")
+                print(f"More than 10 labels for {label}. The plots might be hard to read.")
             labels_colors[label] = dict(zip(labels[label],
                                             umap.generate_pallette(n=len(labels[label]),
                                                                    cmap=palettes[i])))
