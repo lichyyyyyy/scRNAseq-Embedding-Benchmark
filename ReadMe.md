@@ -60,16 +60,15 @@ this [link](https://openai.com/index/openai-api/).
 python embedding_extractor.py
 ```
 
-## Repo Structure
+## Example Output Structure
 
 ```angular2html
 .
-├── ReadMe.md
 ├── example
 │         ├── data
 │         │         ├── pre_processed
 │         │         │         └── demo_cells_2k.h5ad
-│         │         ├── raw
+│         │         ├── raw                              <--- Input raw data directory
 │         │         │         └── demo_cells_2k.h5ad
 │         │         └── tokenized
 │         │             └── Geneformer
@@ -77,56 +76,15 @@ python embedding_extractor.py
 │         │                     ├── data-00000-of-00001.arrow
 │         │                     ├── dataset_info.json
 │         │                     └── state.json
-│         └── embedding
+│         └── embedding                                  <--- Output cell embeddings. One file per model.
 │             ├── genePT_s
-│             │         └── embedding_demo_cells_2k.csv
+│             │         └── cell_embeddings.h5ad
 │             ├── genePT_w
-│             │         └── embedding_demo_cells_2k.csv
-│             ├── geneformer
-│             │         └── embedding.csv
+│             │         └── cell_embeddings.h5ad
+│             ├── Geneformer
+│             │         └── cell_embeddings.h5ad
 │             └── scGPT
-│                 └── embedding_demo_cells_2k.csv
-├── models     <----------- Files downloaded from original repos.
-│         ├── genePT
-│         │         └── model
-│         │             └── GenePT_gene_embedding_ada_text.pickle
-│         ├── geneformer
-│         │         ├── __init__.py
-│         │         ├── emb_extractor.py
-│         │         ├── ensembl_mapping_dict_gc95M.pkl
-│         │         ├── gene_median_dictionary_gc95M.pkl
-│         │         ├── gene_name_id_dict_gc95M.pkl
-│         │         ├── model
-│         │         │         └── gf-20L-95M-i4096
-│         │         │             ├── config.json
-│         │         │             ├── generation_config.json
-│         │         │             ├── model.safetensors
-│         │         │             └── training_args.bin
-│         │         ├── perturber_utils.py
-│         │         ├── token_dictionary_gc95M.pkl
-│         │         └── tokenizer.py
-│         └── scGPT
-│             ├── __init__.py
-│             ├── cell_emb.py
-│             ├── data_collator.py
-│             ├── dsbn.py
-│             ├── gene_tokenizer.py
-│             ├── grad_reverse.py
-│             ├── grn.py
-│             ├── model
-│             │         ├── args.json
-│             │         ├── model.pt
-│             │         └── vocab.json
-│             ├── model.py
-│             ├── preprocess.py
-│             └── util.py
-├── config.py
-├── embedding_extractor.py
-├── data
-│         └── expanded_gene_info_table.csv
-├── pre_processor.py
-├── requirements.txt
-└── setup.py
+│                       └── cell_embeddings.h5ad
 
 ```
 
