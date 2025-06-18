@@ -8,7 +8,7 @@ Generate benchmark metrics and visualize UMAP figures for given cell embeddings.
 
 Example usage:
 ```
-eval = CellEmbeddingsEval(model_name='scGPT',
+eval = ZeroShotCellEmbeddingsEval(model_name='scGPT',
                           embedding_file_path='D:\Beaver\code\scRNAseq-Embedding-Benchmark\example1\embedding\scGPT\cell_embeddings.h5ad',
                           output_dir='example1/eval/scGPT/',
                           label_key=['CellType'],
@@ -36,7 +36,7 @@ import utils
 import umap_util as umap
 
 
-class CellEmbeddingsEval():
+class ZeroShotCellEmbeddingsEval:
     def __init__(self,
                  model_name: str,
                  embedding_file_path: str,
