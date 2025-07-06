@@ -1,6 +1,0 @@
-metric,label,value
-NMI_cluster/label,cell_type,0.23282529338040425
-ARI_cluster/label,cell_type,0.13025222122266275
-ASW_label,cell_type,0.4249945680181165
-graph_conn,cell_type,0.37250000000000005
-avg_bio,cell_type,0.2626906942070612
