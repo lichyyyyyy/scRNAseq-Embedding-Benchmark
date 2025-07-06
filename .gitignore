@@ -2,5 +2,5 @@
 .idea/
 .venv/
 __pycache__/
-example/data/raw/RCC_upload_final_raw_counts.h5ad
-models/*/model/
+embedding_extractors/models/*/model/
+pbmc20k/
