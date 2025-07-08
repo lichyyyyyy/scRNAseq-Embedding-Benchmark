@@ -9,7 +9,7 @@ Generate benchmark metrics and visualize UMAP figures for given cell embeddings.
 Example usage:
 ```
 eval = ZeroShotCellEmbeddingsEval(model_name='scGPT',
-                          embedding_file_path='D:\Beaver\code\scRNAseq-Embedding-Benchmark\example1\embedding\scGPT\cell_embeddings.h5ad',
+                          embedding_file_path='embedding\scGPT\cell_embeddings.h5ad',
                           output_dir='example1/eval/scGPT/',
                           label_key=['CellType'],
                           batch_key='batch_key')
@@ -19,6 +19,7 @@ eval.visualize(plot_type='wide')
 """
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 import os
@@ -32,8 +33,8 @@ plt.style.use('fivethirtyeight')
 import seaborn as sns
 import scanpy as sc
 
-import utils
-import umap_util as umap
+import eval.zero_shot.umap_util as umap
+import eval.zero_shot.utils as utils
 
 
 class ZeroShotCellEmbeddingsEval:
@@ -41,8 +42,18 @@ class ZeroShotCellEmbeddingsEval:
                  model_name: str,
                  embedding_file_path: str,
                  output_dir: str,
-                 label_key: List[str] = ["cell_type"],
-                 batch_key: Optional[str] = None) -> None:
+                 label_key: Optional[List[str]] = None,
+                 batch_key: Optional[str] = None,
+                 label_key_filter: Optional[List[List[str]]] = None) -> None:
+        """
+        Initialize an object to evaluate cell embeddings.
+        :param model_name: {"Geneformer", "scGPT", "genePT-w", "genePT-s"}. Name of the foundation model.
+        :param embedding_file_path: Path of the cell embedding h5ad file.
+        :param output_dir: Directory where to save the figures and metrics.
+        :param label_key: A list of labels saved in `adata.obs`.
+        :param batch_key: The batch key saved in `adata.obs`.
+        :param label_key_filter: Only evaluate cells in the filter list.
+        """
         assert model_name in {"Geneformer", "scGPT", "genePT-w", "genePT-s"}, "Invalid model name"
         self.model_name = model_name
         self.adata = sc.read(embedding_file_path)
@@ -54,25 +65,40 @@ class ZeroShotCellEmbeddingsEval:
 
         os.makedirs(output_dir, exist_ok=True)
         self.output_dir = output_dir
-        self.label_key = label_key
 
         # make sure that each label exists and is categorical in adata.obs
-        for label in self.label_key:
-            if label not in self.adata.obs.columns:
-                print(f"Label {label} not found in adata.obs")
-                return
-            self.adata.obs[label] = self.adata.obs[label].astype("category")
+        if label_key:
+            for label in label_key:
+                if label not in self.adata.obs.columns:
+                    print(f"Label {label} not found in adata.obs")
+                    return
+                self.adata.obs[label] = self.adata.obs[label].astype("category")
+        self.label_key = label_key
+        self.label_key_filter = label_key_filter
+        original_cells = len(self.adata.obs)
+        if self.label_key_filter is not None and len(self.label_key_filter) <= len(self.label_key):
+            for i, label in enumerate(self.label_key):
+                self.adata = self.adata[self.adata.obs[label].isin(self.label_key_filter[i])]
+        print(
+            f'Evaluating {self.model_name} model: {len(self.adata.obs)} out of {original_cells} cell embeddings after filtering.')
 
     def evaluate(self,
                  n_cells: int = 7500,
                  embedding_key: Optional[str] = None) -> pd.DataFrame:
+        """
+        Evaluate cell embeddings using clustering metrics, i.e. ASW, ARI.
+        :param n_cells: Number of cells to evaluate.
+            If input files have cells > `n_cells`, will randomly sample `n_cells` cells to visualize.
+            If `n_cells` < 0, use all cells in the input files by default.
+        :param embedding_key: the key of cell embedding column in `adata.obsm`.
+        """
         if embedding_key is None:
             embedding_key = f'X_{self.model_name}'
 
         adata_ = self.adata.copy()
 
         # if adata_ too big, take a subset
-        if adata_.n_obs > n_cells:
+        if adata_.n_obs > n_cells > 0:
             print(f"adata_ has {adata_.n_obs} cells. "
                   f"Taking a subset of {n_cells} cells.")
             sc.pp.subsample(adata_, n_obs=n_cells, copy=False)
@@ -113,7 +139,6 @@ class ZeroShotCellEmbeddingsEval:
 
     def create_original_umap(self,
                              out_emb: str = "X_umap_input") -> None:
-
         sc.pp.neighbors(self.adata)
         temp = sc.tl.umap(self.adata, min_dist=0.3, copy=True)
         self.adata.obsm[out_emb] = temp.obsm["X_umap"].copy()
@@ -126,10 +151,21 @@ class ZeroShotCellEmbeddingsEval:
                   n_cells: int = 7500,
                   embedding_key: Optional[str] = None
                   ) -> Optional[Dict[str, plt.figure]]:
-
+        """
+        Visualize UMAP for input cell embeddings.
+        :param return_fig: whether to return a fig for this function.
+        :param plot_size: size of the plot
+        :param plot_title: title of the plot.
+        :param plot_type: {"simple", "wide", "scanpy"}
+        :param n_cells: number of cells to visualize.
+            If input files have cells > `n_cells`, will randomly sample `n_cells` cells to visualize.
+            If `n_cells` < 0, use all cells in the input files by default.
+        :param embedding_key: the key of cell embedding column in `adata.obsm`.
+        """
         raw_emb = "X_umap_input"
         if embedding_key is None:
             embedding_key = f'X_{self.model_name}'
+        print(f'\tCell embeddings shape: {self.adata.obsm[embedding_key].shape}')
 
         if embedding_key == raw_emb:
             # if the umap_raw embedding is used, create it first
@@ -154,7 +190,7 @@ class ZeroShotCellEmbeddingsEval:
 
         adata_ = self.adata.copy()
         # if adata_ too big, take a subset
-        if adata_.n_obs > n_cells:
+        if adata_.n_obs > n_cells > 0:
             print(f"adata_ has {adata_.n_obs} cells. "
                   f"Taking a subset of {n_cells} cells.")
             sc.pp.subsample(adata_, n_obs=n_cells, copy=False)
@@ -174,14 +210,20 @@ class ZeroShotCellEmbeddingsEval:
             print(msg)
             raise TypeError(msg)
 
-        # get unique values in self.label_key preserving the order
-        label_cols = self.label_key + [self.batch_key]
+        palettes = ['viridis', 'inferno',
+                    'mako', 'rocket',
+                    'tab20', 'colorblind',
+                    'tab20b', 'tab20c']
+        label_cols = []
+        if self.label_key:
+            label_cols += self.label_key
+        if self.batch_key:
+            label_cols += [self.batch_key]
         label_cols = [x for i, x in enumerate(label_cols)
                       if x not in label_cols[:i]]
         # remove label columns that are not in adata_.obs
         label_cols = [x for x in label_cols
                       if x in self.adata.obs.columns]
-
         if len(label_cols) == 0:
             msg = f"No label columns {self.label_key} found in adata.obs"
             print(msg)
@@ -190,10 +232,6 @@ class ZeroShotCellEmbeddingsEval:
         # set the colors for the labels
         labels = dict()
         labels_colors = dict()
-        palettes = ['viridis', 'inferno',
-                    'mako', 'rocket',
-                    'tab20', 'colorblind',
-                    'tab20b', 'tab20c']
 
         if len(label_cols) > len(palettes):
             print("More labels than palettes. Adding random colors.")
@@ -202,12 +240,11 @@ class ZeroShotCellEmbeddingsEval:
         # creating palettes for the labels
         for i, label in enumerate(label_cols):
             labels[label] = self.adata.obs[label].unique()
-            if len(labels[label]) > 10:
+            if len(labels[label]) > len(palettes):
                 print(f"More than 10 labels for {label}. The plots might be hard to read.")
             labels_colors[label] = dict(zip(labels[label],
                                             umap.generate_pallette(n=len(labels[label]),
                                                                    cmap=palettes[i])))
-
         figs = {}
 
         # if plot_type a string, convert to list
@@ -242,6 +279,7 @@ class ZeroShotCellEmbeddingsEval:
                       else "UMAP of the cell embeddings")
 
         if "simple" in plot_type:
+            assert self.label_key is not None, "Simple type plots do not support unlabeled datasets."
             fig, axs = plt.subplots(ncols=len(label_cols),
                                     figsize=(len(label_cols) * w, h),
                                     squeeze=False)
@@ -281,12 +319,13 @@ class ZeroShotCellEmbeddingsEval:
             if return_fig:
                 figs["umap"] = fig
 
-        # wide plotting
+        # wide plotting. Do not support unlabeled dataset.
         if "wide" in plot_type:
+            assert self.label_key is not None, "Wide type plots do not support unlabeled datasets."
             df = pd.DataFrame(self.adata.obsm[plt_emb],
                               columns=["umap_1", "umap_2"])
             for i, label in enumerate(label_cols):
-                if self.adata.obs[label].unique().shape[0] <= 10:
+                if self.adata.obs[label].unique().shape[0] <= len(palettes):
                     df[label] = self.adata.obs[label].tolist()
                     wide_plot = sns.relplot(data=df,
                                             col=label,
@@ -311,43 +350,58 @@ class ZeroShotCellEmbeddingsEval:
                     if return_fig:
                         figs[label] = wide_plot
                 else:
-                    print(f"More than 10 labels for {label}. Skipping wide plot.")
+                    print(f"More than {len(palettes)} labels for {label}. Skipping wide plot.")
 
         if "scanpy" in plot_type:
             # scanpy plotting
-            labels_colors_flat = {k: v for d in labels_colors
-                                  for k, v in labels_colors[d].items()}
-            if embedding_key == raw_emb:
-                # TODO: this needs rewriting
-                adata_temp__ = self.adata.copy()
-                adata_temp__.obsm["X_umap"] = self.adata.obsm[raw_emb].copy()
-                fig2 = sc.pl.umap(adata_temp__,
-                                  color=label_cols,
-                                  add_outline=True,
-                                  layer=plt_emb,
-                                  legend_loc='on data',
-                                  palette=labels_colors_flat,
-                                  return_fig=True)
-                # remove the temporary adata
-                del adata_temp__
+            def generate_scanpy_plot(figs, label_col, plot_name):
+                if label_col is None:
+                    sc.tl.leiden(self.adata)
+                    fig2 = sc.pl.umap(self.adata, color='leiden', return_fig=True,
+                                      figsize=plot_size)  # uses leiden neighbour finding algo
+                else:
+                    labels_colors_flat = {k: v for d in labels_colors
+                                          for k, v in labels_colors[d].items()}
+                    if embedding_key == raw_emb:
+                        adata_temp__ = self.adata.copy()
+                        adata_temp__.obsm["X_umap"] = self.adata.obsm[raw_emb].copy()
+                        adata_temp__.obs[label_col] = adata_temp__.obs[label_col].astype("category")
+                        fig2 = sc.pl.umap(adata_temp__,
+                                          color=label_col,
+                                          add_outline=True,
+                                          layer=plt_emb,
+                                          legend_loc='right margin',
+                                          palette=labels_colors_flat,
+                                          return_fig=True)
+                        del adata_temp__
+                    else:
+                        self.adata.obs[label_col] = self.adata.obs[label_col].astype("category")
+                        fig2 = sc.pl.umap(self.adata,
+                                          color=label_col,
+                                          add_outline=True,
+                                          layer=plt_emb,
+                                          legend_loc='right margin',
+                                          palette=labels_colors_flat,
+                                          return_fig=True)
+                fig2.set_size_inches(w, h)
+                fig2.suptitle(plot_title, fontsize=16)
+                fig2.tight_layout()
+                fig2.subplots_adjust(top=0.85)
+
+                fig2_savefig = os.path.join(self.output_dir,
+                                            f"umap_{plot_name}_{embedding_key}.png")
+                fig2.savefig(fig2_savefig)
+                if return_fig:
+                    figs[plot_name] = fig2
+
+                return figs
+
+            if self.label_key is None:
+                figs = generate_scanpy_plot(figs, self.label_key, 'scanpy__labels')
             else:
-                fig2 = sc.pl.umap(self.adata,
-                                  color=label_cols,
-                                  add_outline=True,
-                                  layer=plt_emb,
-                                  legend_loc='on data',
-                                  palette=labels_colors_flat,
-                                  return_fig=True)
-            fig2.suptitle(plot_title, fontsize=16)
-            fig2.tight_layout()
-            fig2.subplots_adjust(top=0.85)
-
-            fig2_savefig = os.path.join(self.output_dir,
-                                        f"umap_scanpy__{embedding_key}.png")
-            fig2.savefig(fig2_savefig)
-
-            if return_fig:
-                figs["umap_scanpy"] = fig2
+                for label in self.label_key:
+                    figs = generate_scanpy_plot(figs, label, 'scanpy__labels')
+            if self.batch_key:
+                figs = generate_scanpy_plot(figs, [self.batch_key], 'scanpy__batch_key')
 
         return figs if return_fig else None
-

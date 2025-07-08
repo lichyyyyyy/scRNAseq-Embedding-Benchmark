@@ -20,6 +20,7 @@ PreProcessor.pre_process()
 
 """
 import warnings
+
 warnings.filterwarnings("ignore")
 
 import os
@@ -33,14 +34,20 @@ from embedding_extractors import config
 
 class PreProcessor:
     @staticmethod
-    def pre_process(preprocessor_configs = config.preprocessor_configs):
+    def pre_process(preprocessor_configs=None):
         """
         Pre-process the Anndata file.
         """
+        if preprocessor_configs is None:
+            preprocessor_configs = config.preprocessor_configs
+        else:
+            for key, val in config.preprocessor_configs.items():
+                if key not in preprocessor_configs:
+                    preprocessor_configs[key] = val
         gene_id_col_name = preprocessor_configs['gene_id_col_name']
         gene_id_type = preprocessor_configs['gene_id_type']
         file_format = preprocessor_configs['file_format']
-        raw_data_directory= preprocessor_configs['raw_data_directory']
+        raw_data_directory = preprocessor_configs['raw_data_directory']
         preprocessed_data_directory = preprocessor_configs['preprocessed_data_directory']
         keep_batch_key = preprocessor_configs['keep_batch_key']
         assert file_format in {"h5ad"}, "Unsupported file type"
@@ -65,15 +72,16 @@ class PreProcessor:
                     if gene_id_col_name == var_to_be_added:
                         gene_id_col_name = f'original_{var_to_be_added}'
             for col in adata.obs.columns:
-                if col in preprocessor_configs['custom_cell_attr_names'].keys():
+                if col in preprocessor_configs['custom_cell_attr_names'].keys() and \
+                        preprocessor_configs['custom_cell_attr_names'][col] != col:
                     adata.obs[preprocessor_configs['custom_cell_attr_names'][col]] = adata.obs[col].copy()
-                    adata.obs.drop(columns=[col], axis=1, inplace=True)
             left_key_column = adata.var.index if gene_id_col_name == 'index' else adata.var[gene_id_col_name]
             adata.var = pd.merge(adata.var, gene_info_table, how='left', left_on=left_key_column,
                                  right_on=gene_info_table[gene_id_type])
             if keep_batch_key:
                 adata.obs['batch_key'] = os.path.basename(os.path.dirname(file_path))
 
+            adata.X = adata.X * preprocessor_configs['gene_expression_subsample_ratio']
             # Add `n_counts` for each cell.
             if 'n_counts' in adata.var.columns:
                 adata.obs['original_n_counts'] = adata.obs['n_counts']
