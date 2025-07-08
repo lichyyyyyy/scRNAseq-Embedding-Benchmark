@@ -4,6 +4,7 @@ import pickle
 import platform
 import time
 import warnings
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import anndata as ad
 import numpy as np
@@ -176,6 +177,24 @@ class EmbeddingExtractor:
             return print(f"Output embedding in {output_path}")
 
         elif self.model_name == "genePT-w":
+            def compute_embeddings_in_batches(adata, lookup_embed, gene_names, batch_size=10000):
+                n_cells = adata.n_obs
+                lookup_embed_torch = torch.tensor(lookup_embed, dtype=torch.float32)
+                result_embeddings = []
+
+                for start in range(0, n_cells, batch_size):
+                    end = min(start + batch_size, n_cells)
+                    X_batch = adata.X[start:end]
+                    if issparse(X_batch):
+                        X_batch = X_batch.toarray()
+                    X_batch_torch = torch.tensor(X_batch, dtype=torch.float32)
+                    # matrix multiplication and normalization
+                    batch_embed = torch.matmul(X_batch_torch, lookup_embed_torch) / len(gene_names)
+                    result_embeddings.append(batch_embed.numpy())  # convert back to numpy
+
+                # Concatenate all batches
+                return np.vstack(result_embeddings)
+
             print("Extracting genePT-W embeddings")
             with open(os.path.join(self.configs['load_model_dir'], self.configs['embedding_file_name']),
                       'rb') as fp:
@@ -193,9 +212,8 @@ class EmbeddingExtractor:
                         lookup_embed[i] = genept_embedding_data[gene]
                     else:
                         count_missing += 1
-                adata_torch = torch.tensor(adata.X.toarray() if issparse(adata.X) else adata.X, dtype=torch.float32)
-                lookup_embed_torch = torch.tensor(lookup_embed, dtype=torch.float32)
-                file_embeddings = torch.divide(torch.matmul(adata_torch, lookup_embed_torch), len(gene_names)).numpy()
+
+                file_embeddings = compute_embeddings_in_batches(adata, lookup_embed, gene_names)
                 file_embeddings = add_custom_cell_attrs(custom_cell_attr_names=self.configs['custom_cell_attr_names'],
                                                         embedding_attrs=adata.obs,
                                                         cell_emb=pd.DataFrame(file_embeddings))
@@ -243,25 +261,45 @@ class EmbeddingExtractor:
                         break
                     except Exception as e:
                         print(f"Failed to fetch embeddings from OpenAi. Attempt {attempt + 1}: {e}")
-                        time.sleep(2 ** attempt)
+                        time.sleep(2 * attempt)
 
                 return np.array(emb)
+
+            def fetch_embeddings_multithreaded(ranked_cells_data, model, max_threads=5):
+                file_embeddings = [None] * len(ranked_cells_data)
+
+                with ThreadPoolExecutor(max_workers=max_threads) as executor:
+                    future_to_index = {
+                        executor.submit(get_gpt_embedding, ranked_cells_data[i], model): i
+                        for i in range(len(ranked_cells_data))
+                    }
+
+                    for i, future in enumerate(as_completed(future_to_index)):
+                        idx = future_to_index[future]
+                        try:
+                            result = future.result()
+                            file_embeddings[idx] = result
+                            if idx % 100 == 0:
+                                print(f"Processed {idx} out of {len(ranked_cells_data)} cells...")
+                        except Exception as e:
+                            print(f"Failed to process cell {idx}: {e}")
+
+                return file_embeddings
 
             embeddings = pd.DataFrame()
             openai.api_key = self.configs['openai_api_key']
             os.makedirs(self.configs['genept_s_embedding_output_directory'], exist_ok=True)
+            total_cells = 0
             for file_path in glob.glob(self.configs['preprocessed_data_directory'] + f"/*.h5ad"):
                 print(f"Embedding {file_path}")
                 adata = sc.read_h5ad(file_path)
+                total_cells += adata.obs.shape[0]
                 ranked_cells_data = get_seq_embed_gpt(adata.X,
                                                       np.array(adata.var.index),
                                                       prompt_prefix='A cell with genes ranked by expression: ',
                                                       trunc_index=None)
-                file_embeddings = []
-                for i, x in enumerate(ranked_cells_data):
-                    file_embeddings.append(get_gpt_embedding(x))
-                    if i % 100 == 0:
-                        print(f"Processing {i} out of {adata.obs.shape[0]} cells...")
+                file_embeddings = fetch_embeddings_multithreaded(ranked_cells_data,
+                                                                 model=self.configs['genept_s_openai_model_name'])
                 file_embeddings = add_custom_cell_attrs(custom_cell_attr_names=self.configs['custom_cell_attr_names'],
                                                         embedding_attrs=adata.obs,
                                                         cell_emb=pd.DataFrame(file_embeddings))
@@ -274,6 +312,6 @@ class EmbeddingExtractor:
             elif self.output_file_type == 'h5ad':
                 generate_output_anndata(self.configs['custom_cell_attr_names'], embeddings).write(output_path)
 
-            return print(f"Output embedding in {output_path}\n")
+            return print(f"Indexed {len(embeddings)} out of {total_cells} cells. Output embedding in {output_path}\n")
 
         return print("Invalid model name")

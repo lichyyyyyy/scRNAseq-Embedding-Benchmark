@@ -20,6 +20,8 @@ preprocessor_configs = dict(
     # Whether to keep batch key. If true, the input file directory name will be used as the batch key and stored under
     # `adata.obs.batch_key`.
     keep_batch_key=True,
+    # Subsample ratio of raw gene expressions, range (0, 1]. If the value is 1, all gene expressions will be included.
+    gene_expression_subsample_ratio=1,
     # Map of cell attribute labels in `obs` to keep. Key is the name in original file, value is the name in
     # pre-processed file. If none, use empty map {}.
     custom_cell_attr_names={'cell_type': 'cell_type'},
@@ -35,8 +37,6 @@ geneformer_configs = dict(
     tokenized_file_directory="./example/data/tokenized/Geneformer",
     # The output tokenized filename prefix.
     tokenized_file_prefix='tokenized',
-    # List of cell attribute labels to keep. If none, use empty list [].
-    custom_cell_attr_names=['cell_type'],
     # Directory of the Geneformer pre-trained model.
     load_model_dir="embedding_extractors/models/geneformer/model/",
     # Name of the Geneformer pre-trained model.
@@ -46,7 +46,9 @@ geneformer_configs = dict(
     # The output embedding file directory.
     embedding_output_directory="example/embedding/Geneformer/",
     # The output embedding file name.
-    embedding_output_filename="cell_embeddings"
+    embedding_output_filename="cell_embeddings",
+    # List of cell attribute labels to keep, i.e. `cell_type` and `batch_key`. If none, use empty list [].
+    custom_cell_attr_names=['cell_type', 'batch_key'],
 )
 
 """
@@ -63,8 +65,8 @@ scgpt_configs = dict(
     embedding_output_directory="example/embedding/scGPT/",
     # The output embedding file name.
     embedding_output_filename="cell_embeddings",
-    # List of cell attribute labels to keep. If none, use empty list [].
-    custom_cell_attr_names=['cell_type'],
+    # List of cell attribute labels to keep, i.e. `cell_type` and `batch_key`. If none, use empty list [].
+    custom_cell_attr_names=['cell_type', 'batch_key'],
 )
 
 """
@@ -87,8 +89,8 @@ genept_configs = dict(
     embedding_output_filename="cell_embeddings",
     # OpenAI api key.
     openai_api_key='',  # remember to set your open AI API key!
-    # List of cell attribute labels to keep. If none, use empty list [].
-    custom_cell_attr_names=['cell_type'],
+    # List of cell attribute labels to keep, i.e. `cell_type` and `batch_key`. If none, use empty list [].
+    custom_cell_attr_names=['cell_type', 'batch_key'],
 )
 
 """
