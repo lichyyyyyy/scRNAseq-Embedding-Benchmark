@@ -279,7 +279,7 @@ class EmbeddingExtractor:
                         try:
                             result = future.result()
                             file_embeddings[idx] = result
-                            if idx % 100 == 0:
+                            if idx % 1000 == 0:
                                 print(f"Processed {idx} out of {len(ranked_cells_data)} cells...")
                         except Exception as e:
                             print(f"Failed to process cell {idx}: {e}")
@@ -299,7 +299,8 @@ class EmbeddingExtractor:
                                                       prompt_prefix='A cell with genes ranked by expression: ',
                                                       trunc_index=None)
                 file_embeddings = fetch_embeddings_multithreaded(ranked_cells_data,
-                                                                 model=self.configs['genept_s_openai_model_name'])
+                                                                 model=self.configs['genept_s_openai_model_name'],
+                                                                 max_threads=self.configs['openai_api_max_threads'])
                 file_embeddings = add_custom_cell_attrs(custom_cell_attr_names=self.configs['custom_cell_attr_names'],
                                                         embedding_attrs=adata.obs,
                                                         cell_emb=pd.DataFrame(file_embeddings))
