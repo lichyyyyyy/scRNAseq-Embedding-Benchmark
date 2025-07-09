@@ -89,6 +89,7 @@ genept_configs = dict(
     embedding_output_filename="cell_embeddings",
     # OpenAI api key.
     openai_api_key='',  # remember to set your open AI API key!
+    openai_api_max_threads=5,
     # List of cell attribute labels to keep, i.e. `cell_type` and `batch_key`. If none, use empty list [].
     custom_cell_attr_names=['cell_type', 'batch_key'],
 )
