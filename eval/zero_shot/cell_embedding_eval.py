@@ -26,7 +26,6 @@ import os
 from typing import List, Optional, Tuple, Dict
 
 import matplotlib.pyplot as plt
-import pandas as pd
 
 plt.style.use('fivethirtyeight')
 
@@ -36,23 +35,30 @@ import scanpy as sc
 import eval.zero_shot.umap_util as umap
 import eval.zero_shot.utils as utils
 
+import pandas as pd
+import harmonypy as hm
+
 
 class ZeroShotCellEmbeddingsEval:
     def __init__(self,
                  model_name: str,
                  embedding_file_path: str,
                  output_dir: str,
+                 embedding_key: Optional[str] = None,
                  label_key: Optional[List[str]] = None,
                  batch_key: Optional[str] = None,
-                 label_key_filter: Optional[List[List[str]]] = None) -> None:
+                 label_key_filter: Optional[List[List[str]]] = None,
+                 run_harmony = False) -> None:
         """
         Initialize an object to evaluate cell embeddings.
         :param model_name: {"Geneformer", "scGPT", "genePT-w", "genePT-s"}. Name of the foundation model.
         :param embedding_file_path: Path of the cell embedding h5ad file.
         :param output_dir: Directory where to save the figures and metrics.
+        :param embedding_key: the key of cell embedding column in `adata.obsm`.
         :param label_key: A list of labels saved in `adata.obs`.
         :param batch_key: The batch key saved in `adata.obs`.
         :param label_key_filter: Only evaluate cells in the filter list.
+        :param run_harmony: Whether to run harmony before evaluation.
         """
         assert model_name in {"Geneformer", "scGPT", "genePT-w", "genePT-s"}, "Invalid model name"
         self.model_name = model_name
@@ -62,6 +68,22 @@ class ZeroShotCellEmbeddingsEval:
         if batch_key is not None and batch_key not in self.adata.obs.columns:
             print(f"batch_key {batch_key} not found in adata.obs")
             return
+
+        if embedding_key is None:
+            self.embedding_key = f'X_{self.model_name}'
+        else:
+            self.embedding_key = embedding_key
+
+        # check if the embeddings are in adata
+        if self.embedding_key not in self.adata.obsm.keys():
+            msg = f"Embeddings {embedding_key} not found in adata.obsm"
+            print(msg)
+            raise ValueError(msg)
+
+        if run_harmony:
+            corrected_emb = self.run_harmony()
+            self.embedding_key = f'harmony_corrected_X_{self.model_name}'
+            self.adata.obsm[self.embedding_key] = corrected_emb
 
         os.makedirs(output_dir, exist_ok=True)
         self.output_dir = output_dir
@@ -83,17 +105,13 @@ class ZeroShotCellEmbeddingsEval:
             f'Evaluating {self.model_name} model: {len(self.adata.obs)} out of {original_cells} cell embeddings after filtering.')
 
     def evaluate(self,
-                 n_cells: int = 7500,
-                 embedding_key: Optional[str] = None) -> pd.DataFrame:
+                 n_cells: int = 7500) -> pd.DataFrame:
         """
         Evaluate cell embeddings using clustering metrics, i.e. ASW, ARI.
         :param n_cells: Number of cells to evaluate.
             If input files have cells > `n_cells`, will randomly sample `n_cells` cells to visualize.
             If `n_cells` < 0, use all cells in the input files by default.
-        :param embedding_key: the key of cell embedding column in `adata.obsm`.
         """
-        if embedding_key is None:
-            embedding_key = f'X_{self.model_name}'
 
         adata_ = self.adata.copy()
 
@@ -116,23 +134,17 @@ class ZeroShotCellEmbeddingsEval:
             print(msg)
             raise ValueError(msg)
 
-        # check if the embeddings are in adata
-        if embedding_key not in adata_.obsm.keys():
-            msg = f"Embeddings {embedding_key} not found in adata.obsm"
-            print(msg)
-            raise ValueError(msg)
-
         for label in label_cols:
             metrics = utils.eval_scib_metrics(adata_,
                                               batch_key=self.batch_key,
                                               label_key=label,
-                                              embedding_key=embedding_key)
+                                              embedding_key=self.embedding_key)
             for metric in metrics.keys():
                 # add row to the dataframe
                 met_df.loc[len(met_df)] = [metric, label, metrics[metric]]
 
         met_df.to_csv(os.path.join(self.output_dir,
-                                   f"{embedding_key}__metrics.csv"),
+                                   f"{self.embedding_key}__metrics.csv"),
                       index=False)
 
         return met_df
@@ -149,7 +161,6 @@ class ZeroShotCellEmbeddingsEval:
                   plot_title: Optional[str] = None,
                   plot_type: [List, str] = "simple",
                   n_cells: int = 7500,
-                  embedding_key: Optional[str] = None
                   ) -> Optional[Dict[str, plt.figure]]:
         """
         Visualize UMAP for input cell embeddings.
@@ -160,32 +171,23 @@ class ZeroShotCellEmbeddingsEval:
         :param n_cells: number of cells to visualize.
             If input files have cells > `n_cells`, will randomly sample `n_cells` cells to visualize.
             If `n_cells` < 0, use all cells in the input files by default.
-        :param embedding_key: the key of cell embedding column in `adata.obsm`.
         """
         raw_emb = "X_umap_input"
-        if embedding_key is None:
-            embedding_key = f'X_{self.model_name}'
-        print(f'\tCell embeddings shape: {self.adata.obsm[embedding_key].shape}')
+        print(f'\tCell embeddings shape: {self.adata.obsm[self.embedding_key].shape}')
 
-        if embedding_key == raw_emb:
+        if self.embedding_key == raw_emb:
             # if the umap_raw embedding is used, create it first
-            self.create_original_umap(out_emb=embedding_key)
+            self.create_original_umap(out_emb=self.embedding_key)
 
         # if adata already has a umap embedding warn that it will be overwritten
         if "X_umap" in self.adata.obsm.keys():
             old_umap_name = "X_umap_old"
             self.adata.obsm[old_umap_name] = self.adata.obsm["X_umap"].copy()
 
-        # check if the embeddings are in adata
-        if embedding_key not in self.adata.obsm.keys():
-            msg = f"Embeddings {embedding_key} not found in adata."
-            print(msg)
-            raise ValueError(msg)
-
         # if embedding_key contains the string umap, do not compute umap again
-        if embedding_key != raw_emb:
+        if self.embedding_key != raw_emb:
             # compute umap embeddings
-            sc.pp.neighbors(self.adata, use_rep=embedding_key)
+            sc.pp.neighbors(self.adata, use_rep=self.embedding_key)
             sc.tl.umap(self.adata, min_dist=0.3)
 
         adata_ = self.adata.copy()
@@ -272,7 +274,7 @@ class ZeroShotCellEmbeddingsEval:
                   f"Valid plot types are {valid_plot_types}. "
                   f"Plotting only {plot_type}")
 
-        plt_emb = "X_umap" if embedding_key != raw_emb else embedding_key
+        plt_emb = "X_umap" if self.embedding_key != raw_emb else self.embedding_key
 
         plot_title = (plot_title
                       if plot_title is not None
@@ -313,7 +315,7 @@ class ZeroShotCellEmbeddingsEval:
             fig.subplots_adjust(top=0.85)
 
             fig_savefig = os.path.join(self.output_dir,
-                                       f"umap__{embedding_key}.png")
+                                       f"umap__{self.embedding_key}.png")
             fig.savefig(fig_savefig)
 
             if return_fig:
@@ -344,7 +346,7 @@ class ZeroShotCellEmbeddingsEval:
                     wide_plot.fig.subplots_adjust(top=0.85)
 
                     wide_plot_savefig = os.path.join(self.output_dir,
-                                                     f"umap_wide__{embedding_key}_{label}.png")
+                                                     f"umap_wide__{self.embedding_key}_{label}.png")
                     wide_plot.savefig(wide_plot_savefig)
 
                     if return_fig:
@@ -362,7 +364,7 @@ class ZeroShotCellEmbeddingsEval:
                 else:
                     labels_colors_flat = {k: v for d in labels_colors
                                           for k, v in labels_colors[d].items()}
-                    if embedding_key == raw_emb:
+                    if self.embedding_key == raw_emb:
                         adata_temp__ = self.adata.copy()
                         adata_temp__.obsm["X_umap"] = self.adata.obsm[raw_emb].copy()
                         adata_temp__.obs[label_col] = adata_temp__.obs[label_col].astype("category")
@@ -389,7 +391,7 @@ class ZeroShotCellEmbeddingsEval:
                 fig2.subplots_adjust(top=0.85)
 
                 fig2_savefig = os.path.join(self.output_dir,
-                                            f"umap_{plot_name}_{embedding_key}.png")
+                                            f"umap_{plot_name}_{self.embedding_key}.png")
                 fig2.savefig(fig2_savefig)
                 if return_fig:
                     figs[plot_name] = fig2
@@ -405,3 +407,27 @@ class ZeroShotCellEmbeddingsEval:
                 figs = generate_scanpy_plot(figs, [self.batch_key], 'scanpy__batch_key')
 
         return figs if return_fig else None
+
+    def run_harmony(self, theta=2.0, max_iter_harmony=10):
+        """
+        Run Harmony batch correction on cell embeddings.
+
+        Parameters:
+        - theta: float (default=2.0)
+            Diversity clustering penalty parameter for Harmony. Higher values make correction more conservative.
+        - max_iter_harmony: int (default=10)
+            Maximum number of Harmony iterations to perform.
+
+        Returns:
+        - corrected_embeddings: np.ndarray of shape (n_cells, n_features)
+            Batch-corrected embeddings.
+        """
+        # Create a metadata DataFrame with the batch information
+        meta_data = pd.DataFrame({'batch': self.adata.obs[self.batch_key]})
+
+        # Run Harmony
+        ho = hm.run_harmony(self.adata.obsm[self.embedding_key], meta_data, vars_use=['batch'],
+                            theta=theta, max_iter_harmony=max_iter_harmony)
+
+        # Return the corrected embeddings (transpose to shape [n_cells, n_features])
+        return ho.Z_corr.T
