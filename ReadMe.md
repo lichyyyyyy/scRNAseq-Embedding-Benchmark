@@ -64,27 +64,12 @@ python embedding_extractor.py
 
 ```angular2html
 .
-├── example
-│         ├── data
-│         │         ├── pre_processed
-│         │         │         └── demo_cells_2k.h5ad
-│         │         ├── raw                              <--- Input raw data directory
-│         │         │         └── demo_cells_2k.h5ad
-│         │         └── tokenized
-│         │             └── Geneformer
-│         │                 └── tokenized.dataset
-│         │                     ├── data-00000-of-00001.arrow
-│         │                     ├── dataset_info.json
-│         │                     └── state.json
-│         └── embedding                                  <--- Output cell embeddings. One file per model.
-│             ├── genePT_s
-│             │         └── cell_embeddings.h5ad
-│             ├── genePT_w
-│             │         └── cell_embeddings.h5ad
-│             ├── Geneformer
-│             │         └── cell_embeddings.h5ad
-│             └── scGPT
-│                       └── cell_embeddings.h5ad
+├───pbmc
+│   ├───eval
+│   ├───pre_processed
+│   ├───raw_data
+│   └───tokenized
+│       └───geneformer.dataset
 
 ```
 

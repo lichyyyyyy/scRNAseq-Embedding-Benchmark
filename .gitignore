@@ -3,7 +3,4 @@
 .venv/
 __pycache__/
 embedding_extractors/models/*/model/
-pbmc/
-tmp.py
-pbmc_sampled_80/
-pbmc_sampled_n_full/
+pbmc*/

@@ -152,6 +152,7 @@ class EmbeddingExtractor:
             print("Extracting scGPT embeddings")
             os.makedirs(self.configs['embedding_output_directory'], exist_ok=True)
             embeddings = pd.DataFrame()
+            success_file = 0
             for file_path in glob.glob(self.configs['preprocessed_data_directory'] + f"/*.h5ad"):
                 print(f"Embedding {file_path}")
                 embed_adata = embed_data(
@@ -167,14 +168,17 @@ class EmbeddingExtractor:
                                                        embedding_attrs=embed_adata.obs,
                                                        cell_emb=pd.DataFrame(embed_adata.obsm['X_scGPT']))
                 embeddings = pd.concat([embeddings, file_embedding], axis=0)
+                success_file += 1
 
+            if success_file == 0:
+                return print(f"No preprocessed file found.")
             output_path = os.path.join(self.configs['embedding_output_directory'], self.configs[
                 'embedding_output_filename'] + '.' + self.output_file_type)
             if self.output_file_type == 'csv':
                 embeddings.to_csv(output_path)
             elif self.output_file_type == 'h5ad':
                 generate_output_anndata(self.configs['custom_cell_attr_names'], embeddings).write(output_path)
-            return print(f"Output embedding in {output_path}")
+            return print(f"Extract embeddings from {success_file} files. Output embedding in {output_path}")
 
         elif self.model_name == "genePT-w":
             def compute_embeddings_in_batches(adata, lookup_embed, gene_names, batch_size=10000):
@@ -201,6 +205,7 @@ class EmbeddingExtractor:
                 genept_embedding_data = pickle.load(fp)
             EMBED_DIM = 1536  # embedding dim from GPT-3.5
             embeddings = pd.DataFrame()
+            success_file = 0
             for file_path in glob.glob(self.configs['preprocessed_data_directory'] + f"/*.h5ad"):
                 print(f"Embedding {file_path}")
                 adata = sc.read_h5ad(file_path)
@@ -219,7 +224,10 @@ class EmbeddingExtractor:
                                                         cell_emb=pd.DataFrame(file_embeddings))
                 embeddings = pd.concat([embeddings, file_embeddings], axis=0)
                 print(f"Unable to match {count_missing} out of {len(gene_names)} genes in {file_path}")
+                success_file += 1
 
+            if success_file == 0:
+                return print(f"No preprocessed file found.")
             output_path = os.path.join(self.configs['genept_w_embedding_output_directory'], self.configs[
                 'embedding_output_filename'] + '.' + self.output_file_type)
             os.makedirs(self.configs['genept_w_embedding_output_directory'], exist_ok=True)
@@ -228,7 +236,7 @@ class EmbeddingExtractor:
             elif self.output_file_type == 'h5ad':
                 generate_output_anndata(self.configs['custom_cell_attr_names'], embeddings).write(output_path)
 
-            return print(f"Output embedding in {output_path}\n")
+            return print(f"Extract embeddings from {success_file} files. Output embedding in {output_path}\n")
 
         elif self.model_name == "genePT-s":
             print("Extracting genePT-s embeddings")
@@ -290,6 +298,7 @@ class EmbeddingExtractor:
             openai.api_key = self.configs['openai_api_key']
             os.makedirs(self.configs['genept_s_embedding_output_directory'], exist_ok=True)
             total_cells = 0
+            success_file = 0
             for file_path in glob.glob(self.configs['preprocessed_data_directory'] + f"/*.h5ad"):
                 print(f"Embedding {file_path}")
                 adata = sc.read_h5ad(file_path)
@@ -305,7 +314,10 @@ class EmbeddingExtractor:
                                                         embedding_attrs=adata.obs,
                                                         cell_emb=pd.DataFrame(file_embeddings))
                 embeddings = pd.concat([embeddings, file_embeddings], axis=0)
+                success_file += 1
 
+            if success_file == 0:
+                return print(f"No preprocessed file found.")
             output_path = os.path.join(self.configs['genept_s_embedding_output_directory'], self.configs[
                 'embedding_output_filename'] + '.' + self.output_file_type)
             if self.output_file_type == 'csv':
@@ -313,6 +325,6 @@ class EmbeddingExtractor:
             elif self.output_file_type == 'h5ad':
                 generate_output_anndata(self.configs['custom_cell_attr_names'], embeddings).write(output_path)
 
-            return print(f"Indexed {len(embeddings)} out of {total_cells} cells. Output embedding in {output_path}\n")
+            return print(f"Extract embeddings from {success_file} files. Indexed {len(embeddings)} out of {total_cells} cells. Output embedding in {output_path}\n")
 
         return print("Invalid model name")
