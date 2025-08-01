@@ -22,6 +22,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+import anndata
 import os
 from typing import List, Optional, Tuple, Dict
 
@@ -48,7 +49,7 @@ class ZeroShotCellEmbeddingsEval:
                  label_key: Optional[List[str]] = None,
                  batch_key: Optional[str] = None,
                  label_key_filter: Optional[List[List[str]]] = None,
-                 run_harmony = False) -> None:
+                 batch_correction_method: Optional[str] = None) -> None:
         """
         Initialize an object to evaluate cell embeddings.
         :param model_name: {"Geneformer", "scGPT", "genePT-w", "genePT-s"}. Name of the foundation model.
@@ -58,7 +59,9 @@ class ZeroShotCellEmbeddingsEval:
         :param label_key: A list of labels saved in `adata.obs`.
         :param batch_key: The batch key saved in `adata.obs`.
         :param label_key_filter: Only evaluate cells in the filter list.
-        :param run_harmony: Whether to run harmony before evaluation.
+        :param batch_correction_method: {"Harmony", "MCCA"}. Name of the batch correction method applied on cell
+            embeddings before evaluation.
+            Caveat: only support MCCA in python 3.8.
         """
         assert model_name in {"Geneformer", "scGPT", "genePT-w", "genePT-s"}, "Invalid model name"
         self.model_name = model_name
@@ -80,9 +83,17 @@ class ZeroShotCellEmbeddingsEval:
             print(msg)
             raise ValueError(msg)
 
-        if run_harmony:
-            corrected_emb = self.run_harmony()
-            self.embedding_key = f'harmony_corrected_X_{self.model_name}'
+        if batch_correction_method is not None:
+            if batch_correction_method == "Harmony":
+                corrected_emb = self.run_harmony()
+                self.embedding_key = f'harmony_corrected_X_{self.model_name}'
+                print('Using harmony corrected cell embeddings')
+            elif batch_correction_method == "MCCA":
+                corrected_emb = self.run_mcca()
+                self.embedding_key = f'mcca_corrected_X_{self.model_name}'
+                print('Using MCCA corrected cell embeddings')
+            else:
+                raise ValueError("Unknown batch correction method")
             self.adata.obsm[self.embedding_key] = corrected_emb
 
         os.makedirs(output_dir, exist_ok=True)
@@ -431,3 +442,37 @@ class ZeroShotCellEmbeddingsEval:
 
         # Return the corrected embeddings (transpose to shape [n_cells, n_features])
         return ho.Z_corr.T
+
+    def run_mcca(self, n_components=20):
+        """
+        Perform multi-view CCA batch correction on a list of cell embeddings.
+        If the batch sizes differ, a random subset of cells equal to the size of the smallest batch will be selected
+        from each batch.
+
+        Parameters:
+        - embedding_list: list of np.ndarray, each with shape (n_cells, n_features)
+        - n_components: int, number of canonical components to extract
+
+        Returns:
+        - corrected_views: list of np.ndarray, each with shape (n_cells, n_components)
+        """
+        from mvlearn.embed import MCCA  # only support python3.8; used for multi-view CCA.
+
+        # Randomly select N samples per batch and standardize each view (z-score normalization).
+        min_batch_size = self.adata.obs.groupby(self.batch_key).size().min()
+        normalized_views = []
+        adata_ = anndata.AnnData()
+        for batch_key in self.adata.obs[self.batch_key].unique():
+            sub_sampled_adata = sc.pp.subsample(self.adata[self.adata.obs[self.batch_key] == batch_key],
+                                                n_obs=min_batch_size, copy=True)
+            batch_emb = sub_sampled_adata.obsm[self.embedding_key]
+            norm_batch_emb = (batch_emb - batch_emb.mean(axis=0)) / batch_emb.std(axis=0)
+            normalized_views.append(norm_batch_emb)
+            adata_ = anndata.concat([adata_, sub_sampled_adata], axis=0, join='outer')
+        self.adata = adata_
+
+        # Apply multi-view CCA
+        mcca = MCCA(n_components=n_components, regs=1e-1)
+        corrected_views = mcca.fit_transform(normalized_views)
+        return corrected_views.reshape(-1, n_components)
+
