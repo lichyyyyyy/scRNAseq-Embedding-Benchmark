@@ -1,1 +1,2 @@
 from .embedding_extractor import EmbeddingExtractor
+from .setup import download_scgpt_model, download_geneformer_model, download_genept_data

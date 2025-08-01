@@ -8,7 +8,6 @@ import scanpy as sc
 import scib
 from anndata import AnnData
 
-
 # MODIFIED wrapper for all scib metrics from
 # https://github.com/bowang-lab/scGPT/blob/5a69912232e214cda1998f78e5b4a7b5ef09fe06/scgpt/utils/util.py#L267
 def eval_scib_metrics(
