@@ -432,6 +432,7 @@ class TranscriptomeTokenizer:
         )
 
         output_path = (Path(output_directory) / output_prefix).with_suffix(".dataset")
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         tokenized_dataset.save_to_disk(str(output_path))
 
     def tokenize_files(
