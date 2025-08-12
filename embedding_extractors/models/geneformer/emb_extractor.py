@@ -565,6 +565,7 @@ class EmbExtractor:
         output_prefix,
         output_torch_embs=False,
         cell_state=None,
+        write_to_csv=False,
     ):
         """
         Extract embeddings from input data and save as results in output_directory.
@@ -640,7 +641,7 @@ class EmbExtractor:
             embs_df = label_cell_embs(embs, downsampled_data, self.emb_label)
 
         # save embeddings to output_path
-        if cell_state is None:
+        if cell_state is None and write_to_csv:
             output_path = (Path(output_directory) / output_prefix).with_suffix(".csv")
             embs_df.to_csv(output_path)
 
